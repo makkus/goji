@@ -1,0 +1,69 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.bestgrid</groupId>
+  <artifactId>goji</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  
+  	<repositories>
+		<repository>
+			<id>releases</id>
+			<url>http://code.ceres.auckland.ac.nz/nexus/content/groups/public/</url>
+			<releases>
+				<enabled>true</enabled>
+				<updatePolicy>daily</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>fail</checksumPolicy>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>snapshots</id>
+			<url>http://code.ceres.auckland.ac.nz/nexus/content/groups/public-snapshots/
+			</url>
+			<releases>
+				<enabled>false</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</snapshots>
+		</repository>
+<!--		<repository>
+			<id>jboss</id>
+			<url>https://repository.jboss.org/nexus/content/groups/public/</url>
+		</repository>-->
+	</repositories>
+
+	<distributionManagement>
+		<repository>
+			<name>BeSTGRID Releases Repository</name>
+			<id>bestgrid.release</id>
+			<url>http://code.ceres.auckland.ac.nz/nexus/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>bestgrid.snapshot</id>
+			<name>BeSTGRID Snapshots Repository</name>
+			<url>http://code.ceres.auckland.ac.nz/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+  
+  
+  <dependencies>
+  	<dependency>
+  		<groupId>globus.online</groupId>
+  		<artifactId>jgo</artifactId>
+  		<version>0.0.7-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>grith</groupId>
+  		<artifactId>jgrith</artifactId>
+  		<version>0.5.8</version>
+  	</dependency>
+  </dependencies>
+</project>
