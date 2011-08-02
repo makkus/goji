@@ -1,11 +1,9 @@
 package org.globusonline.commands;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import org.globusonline.GojiTransferAPIClient;
 import org.globusonline.JGOUtils;
-import org.globusonline.Options;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class EndpointAdd extends JGOCommand {
@@ -22,7 +20,8 @@ public class EndpointAdd extends JGOCommand {
 	private final boolean isPublic;
 	private String endpointName;
 	private final String username;
-	private final String path;
+
+	private String jsonData;
 
 	// output
 	private String msg = null;
@@ -33,31 +32,11 @@ public class EndpointAdd extends JGOCommand {
 	private String type = null;
 	private String canonical_name = null;
 
-	public EndpointAdd(GojiTransferAPIClient client, Options opts)
-			throws Exception {
-		this.client = client;
-		gridFTPServer = opArgGetValue(opts.opArgs, "-p");
-		myProxyServer = opArgGetValue(opts.opArgs, "-m");
-		serverDN = opArgGetValue(opts.opArgs, "-s");
-		isGlobusConnect = opArgHasValue(opts.opArgs, "--gc");
-		isPublic = opArgHasValue(opts.opArgs, "-P");
-		endpointName = opts.opArgs[opts.opArgs.length - 1];
-		username = opts.username;
-
-		path = getPath(opts.username, OPERATION, opts.opArgs);
-	}
-
 	public EndpointAdd(GojiTransferAPIClient client, String gridFTPServer,
 			String myProxyServer, String serverDN, boolean isGlobusConnect,
-			boolean isPublic, String endpointName, String username
-			) throws Exception {
-		this(client, gridFTPServer, myProxyServer, serverDN, isGlobusConnect, isPublic, endpointName, username, null);
-	}
+			boolean isPublic, String endpointName, String username)
+					throws JSONException {
 
-	public EndpointAdd(GojiTransferAPIClient client, String gridFTPServer,
-			String myProxyServer, String serverDN, boolean isGlobusConnect,
-			boolean isPublic, String endpointName, String username,
-			String[] opArgs) throws Exception {
 		this.client = client;
 		this.gridFTPServer = gridFTPServer;
 		this.myProxyServer = myProxyServer;
@@ -66,12 +45,26 @@ public class EndpointAdd extends JGOCommand {
 		this.isPublic = isPublic;
 		this.endpointName = endpointName;
 		this.username = username;
-		this.path = getPath(username, OPERATION, opArgs);
+		init();
 	}
 
 	@Override
-	public void process() throws Exception {
+	public String getJsonData() {
 
+		return jsonData;
+	}
+
+	@Override
+	public String getMethod() {
+		return "POST";
+	}
+
+	@Override
+	public String getPath() {
+		return "/endpoint";
+	}
+
+	private void init() throws JSONException {
 		JSONObject jobj = new JSONObject();
 
 		jobj.put("username", username);
@@ -120,22 +113,24 @@ public class EndpointAdd extends JGOCommand {
 
 		jobj.put("public", isPublic);
 
-		String jsonData = jobj.toString();
+		jsonData = jobj.toString();
 		System.out.println("SENDING POST: " + jsonData);
-		HttpsURLConnection sConn = client.request("POST", this.path, jsonData);
-		JSONArray results = client.getResult(sConn);
-		if (results != null) {
-			this.type = JGOUtils.extractFromResults(results, "DATA_TYPE");
+	}
+
+	@Override
+	public void processResult() {
+
+		if (this.result != null) {
+			this.type = JGOUtils.extractFromResults(result, "DATA_TYPE");
 			if (this.type.equals("endpoint_create_result")) {
-				this.msg = JGOUtils.extractFromResults(results, "message");
-				this.gc_key = JGOUtils.extractFromResults(results,
+				this.msg = JGOUtils.extractFromResults(result, "message");
+				this.gc_key = JGOUtils.extractFromResults(result,
 						"globus_connect_setup_key");
-				this.req_id = JGOUtils
-						.extractFromResults(results, "request_id");
-				this.canonical_name = JGOUtils.extractFromResults(results,
+				this.req_id = JGOUtils.extractFromResults(result, "request_id");
+				this.canonical_name = JGOUtils.extractFromResults(result,
 						"canonical_name");
 			} else {
-				System.out.println("Got unknown result type: " + results);
+				System.out.println("Got unknown result type: " + result);
 			}
 		}
 

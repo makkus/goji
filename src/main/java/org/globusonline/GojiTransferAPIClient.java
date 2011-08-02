@@ -44,6 +44,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
+import org.globusonline.commands.JGOCommand;
 import org.json.JSONArray;
 
 
@@ -176,7 +177,7 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 		return tmf.getTrustManagers();
 	}
 
-	public static JSONArray getResult(HttpsURLConnection c)
+	private static JSONArray getResult(HttpsURLConnection c)
 			throws IOException, GeneralSecurityException
 			{
 		JSONArray jArr = null;
@@ -205,8 +206,7 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 		return jArr;
 			}
 
-	private final String path = null;
-	private String go_username = null;
+	// private String go_username = null;
 	private String cafile = null;
 	private String certfile = null;
 	private final String keyfile = null;
@@ -214,36 +214,34 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 
 	/**
 	 * Create a client for the user.
-	 *
-	 * @param username  the Globus Online user to sign in to the API with.
-	 * @param alt  the content type to request from the server for responses.
-	 *             Use one of the ALT_ constants.
-	 * @param trustedCAFile path to a PEM file with a list of certificates
-	 *                      to trust for verifying the server certificate.
-	 *                      If null, just use the trust store configured by
-	 *                      property files and properties passed on the
-	 *                      command line.
-	 * @param certFile  path to a PEM file containing a client certificate
-	 *                  to use for authentication. If null, use the key
-	 *                  store configured by property files and properties
-	 *                  passed on the command line.
-	 * @param keyFile  path to a PEM file containing a client key
-	 *                 to use for authentication. If null, use the key
-	 *                 store configured by property files and properties
-	 *                 passed on the command line.
-	 * @param baseUrl  alternate base URL of the service; can be used to
-	 *                 connect to different versions of the API and instances
-	 *                 running on alternate servers. If null, the URL of
-	 *                 the latest version running on the production server
-	 *                 is used.
+	 * 
+	 * @param go_username
+	 *            the Globus Online user to sign in to the API with.
+	 * @param trustedCAFile
+	 *            path to a PEM file with a list of certificates to trust for
+	 *            verifying the server certificate. If null, just use the trust
+	 *            store configured by property files and properties passed on
+	 *            the command line.
+	 * @param certfile
+	 *            path to a PEM file containing a client certificate to use for
+	 *            authentication. If null, use the key store configured by
+	 *            property files and properties passed on the command line.
+	 * @param keyfile
+	 *            path to a PEM file containing a client key to use for
+	 *            authentication. If null, use the key store configured by
+	 *            property files and properties passed on the command line.
+	 * @param baseurl
+	 *            alternate base URL of the service; can be used to connect to
+	 *            different versions of the API and instances running on
+	 *            alternate servers. If null, the URL of the latest version
+	 *            running on the production server is used.
 	 */
 	public GojiTransferAPIClient(String go_username, String baseurl,
 			String certfile, String keyfile, String cafile, boolean verbose)
-			throws KeyManagementException, NoSuchAlgorithmException, Exception
-			{
+					throws KeyManagementException, NoSuchAlgorithmException, Exception
+					{
 		super(go_username, ALT_JSON, null, null, baseurl);
 
-		this.go_username = go_username;
 		this.cafile = cafile;
 		this.certfile = certfile;
 		this.verbose = verbose;
@@ -251,25 +249,22 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 		Security.addProvider(new BouncyCastleProvider());
 
 		this.trustManagers = this.createTrustManagers(
-this.cafile, this.verbose);
+				this.cafile, this.verbose);
 
 		this.keyManagers = this.createKeyManagers(
-this.certfile, this.keyfile,
+				this.certfile, this.keyfile,
 				this.verbose);
 
 		initSocketFactory(true);
-			}
+					}
 
 
-	public String getUsername()
-	{
-		return this.go_username;
-	}
-
-	public HttpsURLConnection request(String method, String path, String jsonData)
+	public void request(JGOCommand command)
 			throws IOException, MalformedURLException, GeneralSecurityException {
+
+		String path = command.getPath();
 		if (! path.startsWith("/")) {
-			path = "/" + path;
+			throw new MalformedURLException("Path doesn't start with '/'");
 		}
 
 		initSocketFactory(false);
@@ -281,7 +276,7 @@ this.certfile, this.keyfile,
 		HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
 		c.setConnectTimeout(this.timeout);
 		c.setSSLSocketFactory(this.socketFactory);
-		c.setRequestMethod(method);
+		c.setRequestMethod(command.getMethod());
 		c.setFollowRedirects(false);
 		c.setRequestProperty("X-Transfer-API-X509-User", this.username);
 		c.setRequestProperty("Accept", this.alt);
@@ -289,15 +284,17 @@ this.certfile, this.keyfile,
 		c.setDoInput(true);
 		c.setDoOutput(true);
 		c.setRequestProperty("Content-Type", this.alt);
-		c.setRequestProperty("Content-Length", "" + Integer.toString(jsonData.getBytes().length));
+		c.setRequestProperty("Content-Length",
+				"" + Integer.toString(command.getJsonData().getBytes().length));
 		c.setRequestProperty("Content-Language", "en-US");
 		c.connect();
 
 		DataOutputStream wr = new DataOutputStream(c.getOutputStream());
-		wr.writeBytes(jsonData);
+		wr.writeBytes(command.getJsonData());
 		wr.flush ();
 		wr.close ();
 
-		return c;
+		JSONArray result = getResult(c);
+		command.setResult(result);
 	}
 }

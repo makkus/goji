@@ -1,35 +1,27 @@
 package org.globusonline.commands;
 
+import org.json.JSONArray;
+
 
 public abstract class JGOCommand {
 
 	public static String getPath(String username, String op, String[] opArgs)
-			throws Exception
-			{
-		if ((op == null) || (username == null))
-		{
+			throws Exception {
+		if ((op == null) || (username == null)) {
 			return null;
 		}
 		StringBuffer sb = new StringBuffer();
-		if (op.equals("tasksummary"))
-		{
+		if (op.equals("tasksummary")) {
 			sb.append("/tasksummary");
-		}
-		else if (op.equals("task"))
-		{
-			if (opArgs != null)
-			{
+		} else if (op.equals("task")) {
+			if (opArgs != null) {
 				sb.append("/task(");
 				sb.append(opArgs[0]);
 				sb.append(")");
-			}
-			else
-			{
+			} else {
 				sb.append("/task");
 			}
-		}
-		else if (op.equals("endpoint-list"))
-		{
+		} else if (op.equals("endpoint-list")) {
 			// v0.9
 			// sb.append("/user(");
 			// sb.append(username);
@@ -37,61 +29,50 @@ public abstract class JGOCommand {
 
 			// v0.10
 			sb.append("/endpoint_list?limit=100");
-		}
-		else if (op.equals("endpoint-add"))
-		{
+		} else if (op.equals("endpoint-add")) {
 			sb.append("/endpoint");
 
-		}
-		else if (op.equals("endpoint-remove"))
-		{
-			if (opArgs != null)
-			{
+		} else if (op.equals("endpoint-remove")) {
+			if (opArgs != null) {
 				String endpoint = opArgs[0];
 				// v0.9
 				// int pos = endpoint.indexOf("#");
 				// if (pos != -1)
 				// {
-				//     String user = endpoint.substring(0, pos);
-				//     String ep = endpoint.substring(pos +1);
-				//     sb.append("/user(");
-				//     sb.append(user);
-				//     sb.append(")/endpoint(");
-				//     sb.append(ep);
-				//     sb.append(")");
+				// String user = endpoint.substring(0, pos);
+				// String ep = endpoint.substring(pos +1);
+				// sb.append("/user(");
+				// sb.append(user);
+				// sb.append(")/endpoint(");
+				// sb.append(ep);
+				// sb.append(")");
 				// }
 				// else
 				// {
-				//     sb.append("/user(");
-				//     sb.append(username);
-				//     sb.append(")/endpoint(");
-				//     sb.append(endpoint);
-				//     sb.append(")");
+				// sb.append("/user(");
+				// sb.append(username);
+				// sb.append(")/endpoint(");
+				// sb.append(endpoint);
+				// sb.append(")");
 				// }
 
 				// v0.10
 				int pos = endpoint.indexOf("#");
-				if (pos != -1)
-				{
+				if (pos != -1) {
 					endpoint = endpoint.substring(pos + 1);
 				}
 				sb.append("/endpoint/");
 				sb.append(endpoint);
+			} else {
+				throw new Exception(
+						"endpoint-remove requires an endpoint-name]");
 			}
-			else
-			{
-				throw new Exception("endpoint-remove requires an endpoint-name]");
-			}
-		}
-		else if (op.equals("activate"))
-		{
-			if (opArgs != null)
-			{
+		} else if (op.equals("activate")) {
+			if (opArgs != null) {
 				String ep = opArgs[0];
 
 				int pos = ep.indexOf("#");
-				if (pos == -1)
-				{
+				if (pos == -1) {
 					// v0.9
 					// sb.append("/endpoint(");
 					// sb.append(ep);
@@ -101,9 +82,7 @@ public abstract class JGOCommand {
 					sb.append("endpoint/");
 					sb.append(ep);
 					sb.append("/activation_requirements");
-				}
-				else
-				{
+				} else {
 					// v0.9
 					// String user = ep.substring(0, pos);
 					// String newep = ep.substring(pos + 1);
@@ -119,43 +98,31 @@ public abstract class JGOCommand {
 					sb.append(newep);
 					sb.append("/activation_requirements");
 				}
-			}
-			else
-			{
+			} else {
 				throw new Exception("Activate requires an endpoint [see Usage]");
 			}
-		}
-		else if (op.equals("transfer"))
-		{
-			if ((opArgs != null) && (opArgs.length > 1))
-			{
+		} else if (op.equals("transfer")) {
+			if ((opArgs != null) && (opArgs.length > 1)) {
 				// v0.9
-				//sb.append("/transfer/generate_id");
+				// sb.append("/transfer/generate_id");
 
 				// v0.10
 				sb.append("/transfer/submission_id");
+			} else {
+				throw new Exception(
+						"transfer requires both a source and destination path");
 			}
-			else
-			{
-				throw new Exception("transfer requires both a source and destination path");
-			}
-		}
-		else if (op.equals("__internal-endpoint-list"))
-		{
-			if (opArgs != null)
-			{
+		} else if (op.equals("__internal-endpoint-list")) {
+			if (opArgs != null) {
 				String ep = opArgs[0];
 				int pos = ep.indexOf("#");
-				if (pos == -1)
-				{
+				if (pos == -1) {
 					sb.append("/user(");
 					sb.append(username);
 					sb.append(")/endpoint(");
 					sb.append(opArgs[0]);
 					sb.append(")");
-				}
-				else
-				{
+				} else {
 					String user = ep.substring(0, pos);
 					String newep = ep.substring(pos + 1);
 					sb.append("/user(");
@@ -164,18 +131,14 @@ public abstract class JGOCommand {
 					sb.append(newep);
 					sb.append(")");
 				}
-			}
-			else
-			{
+			} else {
 				throw new Exception("__internal-endpoint- requires an endpoint");
 			}
-		}
-		else
-		{
+		} else {
 			return null;
 		}
 		return sb.toString();
-			}
+	}
 
 	public static String opArgGetValue(String[] args, String key) {
 		String value = null;
@@ -205,6 +168,18 @@ public abstract class JGOCommand {
 		return found;
 	}
 
-	public abstract void process() throws Exception;
+	protected JSONArray result = null;
+
+	abstract public String getJsonData();
+
+	abstract public String getMethod();
+	abstract public String getPath();
+
+	protected abstract void processResult();
+
+	public void setResult(JSONArray result) {
+		this.result = result;
+		processResult();
+	}
 
 }
