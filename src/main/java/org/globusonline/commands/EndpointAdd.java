@@ -1,51 +1,52 @@
 package org.globusonline.commands;
 
+import java.util.Map;
+
 import org.globusonline.GojiTransferAPIClient;
-import org.globusonline.JGOUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.google.common.collect.ImmutableMap;
 
 public class EndpointAdd extends JGOCommand {
 
-	private final GojiTransferAPIClient client;
-
-	private static final String OPERATION = "endpoint-add";
-
-	// input
-	private final String gridFTPServer;
-	private final String myProxyServer;
-	private final String serverDN;
-	private final boolean isGlobusConnect;
-	private final boolean isPublic;
-	private String endpointName;
-	private final String username;
+	public static final String GRIDFTP_SERVER = "gridFTPServer";
+	public static final String MYPROXY_SERVER = "myProxyServer";
+	public static final String SERVER_DN = "serverDN";
+	public static final String IS_GLOBUS_CONNECT = "isGlobusConnect";
+	public static final String IS_PUBLIC = "isPublic";
+	public static final String ENDPOINT_NAME = "endpointName";
 
 	private String jsonData;
 
-	// output
-	private String msg = null;
-	private String gc_key = null;
-	private String req_id = null;
+	public static final String MESSAGE = "msg";
+	public static final String GC_KEY = "gc_key";
+	public static final String REQ_ID = "req_id";
 
-	private final String resource = null;
+	public static final String CANONICAL_NAME = "canonical_name";
+
 	private String type = null;
-	private String canonical_name = null;
+
+	public EndpointAdd(GojiTransferAPIClient client, Map<String, String> config)
+			throws Exception {
+
+		super(client, config);
+
+	}
 
 	public EndpointAdd(GojiTransferAPIClient client, String gridFTPServer,
 			String myProxyServer, String serverDN, boolean isGlobusConnect,
-			boolean isPublic, String endpointName, String username)
-					throws JSONException {
-
-		this.client = client;
-		this.gridFTPServer = gridFTPServer;
-		this.myProxyServer = myProxyServer;
-		this.serverDN = serverDN;
-		this.isGlobusConnect = isGlobusConnect;
-		this.isPublic = isPublic;
-		this.endpointName = endpointName;
-		this.username = username;
-		init();
+			boolean isPublic, String endpointName) throws Exception {
+		super(client,
+				new ImmutableMap.Builder<String, String>()
+				.put(GRIDFTP_SERVER, gridFTPServer)
+				.put(MYPROXY_SERVER, myProxyServer)
+				.put(SERVER_DN,
+						(serverDN == null) ? NO_VALUE : serverDN)
+						.put(IS_GLOBUS_CONNECT,
+								new Boolean(isGlobusConnect).toString())
+								.put(IS_PUBLIC, new Boolean(isPublic).toString())
+								.put(ENDPOINT_NAME, endpointName).build());
 	}
 
 	@Override
@@ -55,8 +56,8 @@ public class EndpointAdd extends JGOCommand {
 	}
 
 	@Override
-	public String getMethod() {
-		return "POST";
+	public Method getMethod() {
+		return Method.POST;
 	}
 
 	@Override
@@ -64,19 +65,22 @@ public class EndpointAdd extends JGOCommand {
 		return "/endpoint";
 	}
 
-	private void init() throws JSONException {
+	@Override
+	protected void init() throws Exception {
 		JSONObject jobj = new JSONObject();
 
-		jobj.put("username", username);
+		jobj.put("username", client.getUsername());
 		jobj.put("DATA_TYPE", "endpoint");
 		jobj.put("activated", (Object) null);
-		jobj.put("is_globus_connect", isGlobusConnect);
+		jobj.put("is_globus_connect",
+				Boolean.parseBoolean(getConfig(IS_GLOBUS_CONNECT)));
 
 		// v0.9
 		// jobj.put("name", username + "#" + endpointName);
 		// jobj.put("canonical_name", username + "#" + endpointName);
 
 		// v0.10
+		String endpointName = getConfig(ENDPOINT_NAME);
 		int pos = endpointName.indexOf("#");
 		if (pos != -1) {
 			endpointName = endpointName.substring(pos + 1);
@@ -86,13 +90,13 @@ public class EndpointAdd extends JGOCommand {
 			jobj.put("name", endpointName);
 			jobj.put("canonical_name", endpointName);
 		}
-		jobj.put("myproxy_server", myProxyServer);
+		jobj.put("myproxy_server", getConfig(MYPROXY_SERVER));
 
 		JSONArray dataArr = new JSONArray();
 		JSONObject dataObj = new JSONObject();
 		String host = "";
 		String port = "2811";
-		String[] pieces = gridFTPServer.split(":");
+		String[] pieces = getConfig(GRIDFTP_SERVER).split(":");
 		if (pieces != null) {
 			host = pieces[0];
 			if (pieces.length > 1) {
@@ -105,13 +109,13 @@ public class EndpointAdd extends JGOCommand {
 		dataObj.put("port", port);
 		dataObj.put("uri", "gsiftp://" + host + ":" + port);
 		dataObj.put("scheme", "gsiftp");
-		if (serverDN != null) {
-			dataObj.put("subject", serverDN);
+		if (getConfig(SERVER_DN) != null) {
+			dataObj.put("subject", getConfig(SERVER_DN));
 		}
 		dataArr.put(dataObj);
 		jobj.put("DATA", dataArr);
 
-		jobj.put("public", isPublic);
+		jobj.put("public", Boolean.parseBoolean(getConfig(IS_PUBLIC)));
 
 		jsonData = jobj.toString();
 		System.out.println("SENDING POST: " + jsonData);
@@ -121,14 +125,13 @@ public class EndpointAdd extends JGOCommand {
 	public void processResult() {
 
 		if (this.result != null) {
-			this.type = JGOUtils.extractFromResults(result, "DATA_TYPE");
+			this.type = extractFromResults("DATA_TYPE");
 			if (this.type.equals("endpoint_create_result")) {
-				this.msg = JGOUtils.extractFromResults(result, "message");
-				this.gc_key = JGOUtils.extractFromResults(result,
-						"globus_connect_setup_key");
-				this.req_id = JGOUtils.extractFromResults(result, "request_id");
-				this.canonical_name = JGOUtils.extractFromResults(result,
-						"canonical_name");
+				putOutput(MESSAGE, extractFromResults("message"));
+				putOutput(GC_KEY,
+						extractFromResults("globus_connect_setup_key"));
+				putOutput(REQ_ID, extractFromResults("request_id"));
+				putOutput(CANONICAL_NAME, extractFromResults("canonical_name"));
 			} else {
 				System.out.println("Got unknown result type: " + result);
 			}
@@ -139,17 +142,17 @@ public class EndpointAdd extends JGOCommand {
 	@Override
 	public String toString() {
 		StringBuffer strbuf = new StringBuffer("\n");
-		if ((this.gc_key != null) && (!this.gc_key.equals("null"))) {
+		if ((getOutput(GC_KEY) != null) && (!getOutput(GC_KEY).equals("null"))) {
 			strbuf.append("Created the Globus Connect endpoint '");
-			strbuf.append(this.canonical_name);
+			strbuf.append(getOutput(CANONICAL_NAME));
 			strbuf.append("'.");
 			strbuf.append("\n");
 			strbuf.append("Use this setup key when installing Globus Connect:");
 			strbuf.append("\n\t");
-			strbuf.append(this.gc_key);
+			strbuf.append(getOutput(CANONICAL_NAME));
 			strbuf.append("\n");
 		} else {
-			strbuf.append(this.msg);
+			strbuf.append(getOutput(MESSAGE));
 			strbuf.append("\n");
 		}
 		return strbuf.toString();

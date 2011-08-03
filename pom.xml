@@ -1,10 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.bestgrid</groupId>
-  <artifactId>goji</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  
-  	<repositories>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.bestgrid</groupId>
+	<artifactId>goji</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<repositories>
 		<repository>
 			<id>releases</id>
 			<url>http://code.ceres.auckland.ac.nz/nexus/content/groups/public/</url>
@@ -34,10 +35,8 @@
 				<checksumPolicy>warn</checksumPolicy>
 			</snapshots>
 		</repository>
-<!--		<repository>
-			<id>jboss</id>
-			<url>https://repository.jboss.org/nexus/content/groups/public/</url>
-		</repository>-->
+		<!-- <repository> <id>jboss</id> <url>https://repository.jboss.org/nexus/content/groups/public/</url> 
+			</repository> -->
 	</repositories>
 
 	<distributionManagement>
@@ -52,14 +51,9 @@
 			<url>http://code.ceres.auckland.ac.nz/nexus/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
-  
-  
-  <dependencies>
-  	<dependency>
-  		<groupId>globus.online</groupId>
-  		<artifactId>jgo</artifactId>
-  		<version>0.0.7-SNAPSHOT</version>
-  	</dependency>
+
+
+	<dependencies>
   	<dependency>
   		<groupId>grith</groupId>
   		<artifactId>jgrith</artifactId>
@@ -80,5 +74,12 @@
   		<artifactId>grid-jcommons</artifactId>
   		<version>1.2.9-SNAPSHOT</version>
   	</dependency>
+  	<dependency>
+		<groupId>external.jglobus</groupId>
+		<artifactId>jce-jdk13-131</artifactId>
+		<version>1.8.0</version>
+		<type>jar</type>
+		<scope>compile</scope>
+	</dependency>
   </dependencies>
 </project>

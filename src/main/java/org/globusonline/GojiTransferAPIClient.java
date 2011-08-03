@@ -47,28 +47,24 @@ import org.bouncycastle.openssl.PasswordFinder;
 import org.globusonline.commands.JGOCommand;
 import org.json.JSONArray;
 
-
 /**
- * Extension to the base client which supports reading PEM files using
- * Bouncy Castle, so the client cert/key don't have to be converted to
- * PKCS12. Uses JSON primarily, and allows console password retrieval.
+ * Extension to the base client which supports reading PEM files using Bouncy
+ * Castle, so the client cert/key don't have to be converted to PKCS12. Uses
+ * JSON primarily, and allows console password retrieval.
  */
-public class GojiTransferAPIClient extends BaseTransferAPIClient
-{
-	private static class ConsolePasswordFinder implements PasswordFinder
-	{
-		private ConsolePasswordFinder() { }
+public class GojiTransferAPIClient extends BaseTransferAPIClient {
+	private static class ConsolePasswordFinder implements PasswordFinder {
+		private ConsolePasswordFinder() {
+		}
 
-		public char[] getPassword()
-		{
+		public char[] getPassword() {
 			Console c = System.console();
 			return c.readPassword("Enter PEM Pass phrase: ");
 		}
 	}
 
-	static KeyManager[] createKeyManagers(String certFile, String keyFile, boolean verbose)
-			throws GeneralSecurityException, IOException
-			{
+	static KeyManager[] createKeyManagers(String certFile, String keyFile,
+			boolean verbose) throws GeneralSecurityException, IOException {
 		// Create a new empty key store.
 		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
 		ks.load(null);
@@ -104,8 +100,7 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 					continue;
 				}
 				cert = (X509Certificate) o;
-				if (verbose)
-				{
+				if (verbose) {
 					System.out.println("client cert subject: "
 							+ cert.getSubjectX500Principal());
 					System.out.println("client cert issuer : "
@@ -123,20 +118,21 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 
 		// Since we never write out the key store, we don't bother protecting
 		// the key.
-		ks.setEntry("client-key",
-				new KeyStore.PrivateKeyEntry(keyPair.getPrivate(),
-						chain.toArray(new Certificate[0])),
+		ks.setEntry(
+				"client-key",
+				new KeyStore.PrivateKeyEntry(keyPair.getPrivate(), chain
+						.toArray(new Certificate[0])),
 						new KeyStore.PasswordProtection(password));
 
 		// Shove the key store in a KeyManager.
-		KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-				KeyManagerFactory.getDefaultAlgorithm());
+		KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+				.getDefaultAlgorithm());
 		kmf.init(ks, password);
 		return kmf.getKeyManagers();
-			}
+	}
 
-	static TrustManager[] createTrustManagers(String trustedCAFile, boolean verbose)
-			throws GeneralSecurityException, IOException {
+	static TrustManager[] createTrustManagers(String trustedCAFile,
+			boolean verbose) throws GeneralSecurityException, IOException {
 		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
 		ks.load(null);
 
@@ -153,8 +149,7 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 			while ((o = r.readObject()) != null) {
 				cert = (X509Certificate) o;
 
-				if (verbose)
-				{
+				if (verbose) {
 					System.out.println("trusted cert subject: "
 							+ cert.getSubjectX500Principal());
 					System.out.println("trusted cert issuer : "
@@ -171,15 +166,14 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 		}
 
 		// Shove the key store in a TrustManager.
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance(
-				TrustManagerFactory.getDefaultAlgorithm());
+		TrustManagerFactory tmf = TrustManagerFactory
+				.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 		tmf.init(ks);
 		return tmf.getTrustManagers();
 	}
 
 	private static JSONArray getResult(HttpsURLConnection c)
-			throws IOException, GeneralSecurityException
-			{
+			throws IOException, GeneralSecurityException {
 		JSONArray jArr = null;
 		InputStream inputStream = c.getInputStream();
 		InputStreamReader reader = new InputStreamReader(inputStream);
@@ -188,28 +182,24 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 		String inputLine = null;
 		StringBuffer strbuf = new StringBuffer("[");
 
-		while ((inputLine = in.readLine()) != null)
-		{
+		while ((inputLine = in.readLine()) != null) {
 			strbuf.append(inputLine);
 		}
 		strbuf.append("]");
 		in.close();
 
-		try
-		{
+		try {
 			jArr = new JSONArray(strbuf.toString());
-		}
-		catch(Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return jArr;
-			}
+	}
 
 	// private String go_username = null;
 	private String cafile = null;
 	private String certfile = null;
-	private final String keyfile = null;
+	private String keyfile = null;
 	private boolean verbose = false;
 
 	/**
@@ -238,45 +228,46 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 	 */
 	public GojiTransferAPIClient(String go_username, String baseurl,
 			String certfile, String keyfile, String cafile, boolean verbose)
-					throws KeyManagementException, NoSuchAlgorithmException, Exception
-					{
+					throws KeyManagementException, NoSuchAlgorithmException, Exception {
 		super(go_username, ALT_JSON, null, null, baseurl);
 
 		this.cafile = cafile;
 		this.certfile = certfile;
+		this.keyfile = keyfile;
 		this.verbose = verbose;
 
 		Security.addProvider(new BouncyCastleProvider());
 
-		this.trustManagers = this.createTrustManagers(
-				this.cafile, this.verbose);
+		this.trustManagers = this
+				.createTrustManagers(this.cafile, this.verbose);
 
-		this.keyManagers = this.createKeyManagers(
-				this.certfile, this.keyfile,
+		this.keyManagers = this.createKeyManagers(this.certfile, this.keyfile,
 				this.verbose);
 
 		initSocketFactory(true);
-					}
+	}
 
+	public String getUsername() {
+		return super.username;
+	}
 
-	public void request(JGOCommand command)
-			throws IOException, MalformedURLException, GeneralSecurityException {
+	public void request(JGOCommand command) throws IOException,
+	MalformedURLException, GeneralSecurityException {
 
 		String path = command.getPath();
-		if (! path.startsWith("/")) {
+		if (!path.startsWith("/")) {
 			throw new MalformedURLException("Path doesn't start with '/'");
 		}
 
 		initSocketFactory(false);
 		URL url = new URL(this.baseUrl + path);
-		if (this.verbose)
-		{
+		if (this.verbose) {
 			System.out.println("[***] Request Path: " + this.baseUrl + path);
 		}
 		HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
 		c.setConnectTimeout(this.timeout);
 		c.setSSLSocketFactory(this.socketFactory);
-		c.setRequestMethod(command.getMethod());
+		c.setRequestMethod(command.getMethod().toString());
 		c.setFollowRedirects(false);
 		c.setRequestProperty("X-Transfer-API-X509-User", this.username);
 		c.setRequestProperty("Accept", this.alt);
@@ -284,15 +275,24 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient
 		c.setDoInput(true);
 		c.setDoOutput(true);
 		c.setRequestProperty("Content-Type", this.alt);
-		c.setRequestProperty("Content-Length",
-				"" + Integer.toString(command.getJsonData().getBytes().length));
+		if (command.getJsonData() != null) {
+			c.setRequestProperty(
+					"Content-Length",
+					""
+							+ Integer
+							.toString(command.getJsonData().getBytes().length));
+		} else {
+			c.setRequestProperty("Content-Length", "0");
+		}
 		c.setRequestProperty("Content-Language", "en-US");
 		c.connect();
 
-		DataOutputStream wr = new DataOutputStream(c.getOutputStream());
-		wr.writeBytes(command.getJsonData());
-		wr.flush ();
-		wr.close ();
+		if (command.getJsonData() != null) {
+			DataOutputStream wr = new DataOutputStream(c.getOutputStream());
+			wr.writeBytes(command.getJsonData());
+			wr.flush();
+			wr.close();
+		}
 
 		JSONArray result = getResult(c);
 		command.setResult(result);

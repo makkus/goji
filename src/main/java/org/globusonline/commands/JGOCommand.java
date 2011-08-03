@@ -1,181 +1,86 @@
 package org.globusonline.commands;
 
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.globusonline.GojiTransferAPIClient;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 public abstract class JGOCommand {
 
-	public static String getPath(String username, String op, String[] opArgs)
-			throws Exception {
-		if ((op == null) || (username == null)) {
-			return null;
-		}
-		StringBuffer sb = new StringBuffer();
-		if (op.equals("tasksummary")) {
-			sb.append("/tasksummary");
-		} else if (op.equals("task")) {
-			if (opArgs != null) {
-				sb.append("/task(");
-				sb.append(opArgs[0]);
-				sb.append(")");
-			} else {
-				sb.append("/task");
-			}
-		} else if (op.equals("endpoint-list")) {
-			// v0.9
-			// sb.append("/user(");
-			// sb.append(username);
-			// sb.append(")/endpoint?limit=100");
-
-			// v0.10
-			sb.append("/endpoint_list?limit=100");
-		} else if (op.equals("endpoint-add")) {
-			sb.append("/endpoint");
-
-		} else if (op.equals("endpoint-remove")) {
-			if (opArgs != null) {
-				String endpoint = opArgs[0];
-				// v0.9
-				// int pos = endpoint.indexOf("#");
-				// if (pos != -1)
-				// {
-				// String user = endpoint.substring(0, pos);
-				// String ep = endpoint.substring(pos +1);
-				// sb.append("/user(");
-				// sb.append(user);
-				// sb.append(")/endpoint(");
-				// sb.append(ep);
-				// sb.append(")");
-				// }
-				// else
-				// {
-				// sb.append("/user(");
-				// sb.append(username);
-				// sb.append(")/endpoint(");
-				// sb.append(endpoint);
-				// sb.append(")");
-				// }
-
-				// v0.10
-				int pos = endpoint.indexOf("#");
-				if (pos != -1) {
-					endpoint = endpoint.substring(pos + 1);
-				}
-				sb.append("/endpoint/");
-				sb.append(endpoint);
-			} else {
-				throw new Exception(
-						"endpoint-remove requires an endpoint-name]");
-			}
-		} else if (op.equals("activate")) {
-			if (opArgs != null) {
-				String ep = opArgs[0];
-
-				int pos = ep.indexOf("#");
-				if (pos == -1) {
-					// v0.9
-					// sb.append("/endpoint(");
-					// sb.append(ep);
-					// sb.append(")/activation_requirements");
-
-					// v0.10
-					sb.append("endpoint/");
-					sb.append(ep);
-					sb.append("/activation_requirements");
-				} else {
-					// v0.9
-					// String user = ep.substring(0, pos);
-					// String newep = ep.substring(pos + 1);
-					// sb.append("user(");
-					// sb.append(user);
-					// sb.append(")/endpoint(");
-					// sb.append(newep);
-					// sb.append(")/activation_requirements");
-
-					// v0.10
-					String newep = ep.substring(pos + 1);
-					sb.append("endpoint/");
-					sb.append(newep);
-					sb.append("/activation_requirements");
-				}
-			} else {
-				throw new Exception("Activate requires an endpoint [see Usage]");
-			}
-		} else if (op.equals("transfer")) {
-			if ((opArgs != null) && (opArgs.length > 1)) {
-				// v0.9
-				// sb.append("/transfer/generate_id");
-
-				// v0.10
-				sb.append("/transfer/submission_id");
-			} else {
-				throw new Exception(
-						"transfer requires both a source and destination path");
-			}
-		} else if (op.equals("__internal-endpoint-list")) {
-			if (opArgs != null) {
-				String ep = opArgs[0];
-				int pos = ep.indexOf("#");
-				if (pos == -1) {
-					sb.append("/user(");
-					sb.append(username);
-					sb.append(")/endpoint(");
-					sb.append(opArgs[0]);
-					sb.append(")");
-				} else {
-					String user = ep.substring(0, pos);
-					String newep = ep.substring(pos + 1);
-					sb.append("/user(");
-					sb.append(user);
-					sb.append(")/endpoint(");
-					sb.append(newep);
-					sb.append(")");
-				}
-			} else {
-				throw new Exception("__internal-endpoint- requires an endpoint");
-			}
-		} else {
-			return null;
-		}
-		return sb.toString();
+	public enum Method {
+		GET,
+		POST,
+		DELETE
 	}
 
-	public static String opArgGetValue(String[] args, String key) {
+	public static final String NO_VALUE = "no_value";
+
+	protected final GojiTransferAPIClient client;
+
+	protected JSONArray result = null;
+
+	private final Map<String, String> config;
+	private final Map<String, String> output = new TreeMap<String, String>();
+
+	public JGOCommand(GojiTransferAPIClient client) throws Exception {
+		this(client, null);
+	}
+
+	public JGOCommand(GojiTransferAPIClient client, Map<String, String> config)
+			throws Exception {
+		this.client = client;
+		this.config = config;
+		init();
+		client.request(this);
+	}
+
+	public String extractFromResults(String parameter)
+	{
 		String value = null;
-		if (args != null) {
-			for (int i = 0; i < args.length; i++) {
-				if (args[i].equals(key)) {
-					if ((i + 1) < args.length) {
-						value = args[++i];
-					}
-					break;
+		if (result != null)
+		{
+			try
+			{
+				JSONObject jobj = result.getJSONObject(0);
+				if (jobj.get(parameter) != null)
+				{
+					value = jobj.get(parameter).toString();
 				}
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
 			}
 		}
 		return value;
 	}
 
-	public static boolean opArgHasValue(String[] args, String value) {
-		boolean found = false;
-		if (args != null) {
-			for (String tmp : args) {
-				if (tmp.equals(value)) {
-					found = true;
-					break;
-				}
-			}
+	public String getConfig(String key) {
+		if (config != null) {
+			return config.get(key);
+		} else {
+			throw new ConfigException("Key " + key + " not in config");
 		}
-		return found;
 	}
-
-	protected JSONArray result = null;
 
 	abstract public String getJsonData();
 
-	abstract public String getMethod();
+	abstract public Method getMethod();
+	public String getOutput(String key) {
+		return output.get(key);
+	}
+
 	abstract public String getPath();
+	protected abstract void init() throws Exception;
 
 	protected abstract void processResult();
+
+	public void putOutput(String key, String value) {
+		this.output.put(key, value);
+	}
 
 	public void setResult(JSONArray result) {
 		this.result = result;
