@@ -4,21 +4,11 @@ import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.globusonline.GojiTransferAPIClient;
 
-import com.google.common.collect.ImmutableMap;
-
 public class EndpointRemove extends AbstractCommand {
 
-	public static final String ENDPOINT_NAME = "endpoint_name";
-
-	public static final String TYPE = "type";
-	public static final String MESSAGE = "msg";
-	public static final String CODE = "code";
-	public static final String RESOURCE = "resource";
-	public static final String REQ_ID = "req_id";
 
 	public EndpointRemove(GojiTransferAPIClient client, String endpointName) {
-		super(client, new ImmutableMap.Builder<String, String>().put(
-				ENDPOINT_NAME, endpointName).build());
+		super(client, Input.ENDPOINT_NAME, endpointName);
 	}
 
 	@Override
@@ -33,12 +23,17 @@ public class EndpointRemove extends AbstractCommand {
 	}
 
 	@Override
-	protected void init() throws InitException {
+	public String getPath() {
 		try {
-			path = "/endpoint/" + getConfig(ENDPOINT_NAME);
+			return "/endpoint/" + getConfig(Input.ENDPOINT_NAME);
 		} catch (CommandConfigException e) {
 			throw new InitException(e);
 		}
+
+	}
+
+	@Override
+	protected void init() throws InitException {
 	}
 
 	@Override
@@ -46,12 +41,12 @@ public class EndpointRemove extends AbstractCommand {
 
 		if (result != null) {
 			String type = extractFromResults("DATA_TYPE");
-			putOutput(TYPE, type);
+			putOutput(Output.TYPE, type);
 			if (type.equals("result")) {
-				putOutput(MESSAGE, extractFromResults("message"));
-				putOutput(CODE, extractFromResults("code"));
-				putOutput(RESOURCE, extractFromResults("resource"));
-				putOutput(REQ_ID, extractFromResults("request_id"));
+				putOutput(Output.MESSAGE, extractFromResults("message"));
+				putOutput(Output.CODE, extractFromResults("code"));
+				putOutput(Output.RESOURCE, extractFromResults("resource"));
+				putOutput(Output.REQ_ID, extractFromResults("request_id"));
 			} else {
 				System.out.println("Got unknown result type: " + result);
 			}
@@ -61,7 +56,7 @@ public class EndpointRemove extends AbstractCommand {
 	@Override
 	public String toString() {
 		StringBuffer strbuf = new StringBuffer("\n");
-		strbuf.append(getOutput(MESSAGE));
+		strbuf.append(getOutput(Output.MESSAGE));
 		strbuf.append("\n");
 		return strbuf.toString();
 	}
