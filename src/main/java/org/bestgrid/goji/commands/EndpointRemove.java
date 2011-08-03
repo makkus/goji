@@ -1,10 +1,12 @@
 package org.bestgrid.goji.commands;
 
+import org.bestgrid.goji.exceptions.CommandConfigException;
+import org.bestgrid.goji.exceptions.InitException;
 import org.globusonline.GojiTransferAPIClient;
 
 import com.google.common.collect.ImmutableMap;
 
-public class EndpointRemove extends JGOCommand {
+public class EndpointRemove extends AbstractCommand {
 
 	public static final String ENDPOINT_NAME = "endpoint_name";
 
@@ -14,8 +16,7 @@ public class EndpointRemove extends JGOCommand {
 	public static final String RESOURCE = "resource";
 	public static final String REQ_ID = "req_id";
 
-	public EndpointRemove(GojiTransferAPIClient client, String endpointName)
-			throws Exception {
+	public EndpointRemove(GojiTransferAPIClient client, String endpointName) {
 		super(client, new ImmutableMap.Builder<String, String>().put(
 				ENDPOINT_NAME, endpointName).build());
 	}
@@ -32,13 +33,12 @@ public class EndpointRemove extends JGOCommand {
 	}
 
 	@Override
-	public String getPath() {
-		return "/endpoint/" + getConfig(ENDPOINT_NAME);
-	}
-
-	@Override
-	protected void init() throws Exception {
-		// not necessary
+	protected void init() throws InitException {
+		try {
+			path = "/endpoint/" + getConfig(ENDPOINT_NAME);
+		} catch (CommandConfigException e) {
+			throw new InitException(e);
+		}
 	}
 
 	@Override

@@ -8,11 +8,11 @@ import org.globusonline.GojiTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class EndpointList extends JGOCommand {
+public class EndpointList extends AbstractCommand {
 
 	private Map<String, Endpoint> endpoints;
 
-	public EndpointList(GojiTransferAPIClient client) throws Exception {
+	public EndpointList(GojiTransferAPIClient client) {
 		super(client, null);
 	}
 

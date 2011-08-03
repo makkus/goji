@@ -1,6 +1,6 @@
-package org.bestgrid.goji.commands;
+package org.bestgrid.goji.exceptions;
 
-public class CommandConfigException extends RuntimeException {
+public class CommandConfigException extends Exception {
 
 	public CommandConfigException() {
 		// TODO Auto-generated constructor stub
@@ -11,13 +11,13 @@ public class CommandConfigException extends RuntimeException {
 		// TODO Auto-generated constructor stub
 	}
 
-	public CommandConfigException(Throwable arg0) {
-		super(arg0);
+	public CommandConfigException(String arg0, Throwable arg1) {
+		super(arg0, arg1);
 		// TODO Auto-generated constructor stub
 	}
 
-	public CommandConfigException(String arg0, Throwable arg1) {
-		super(arg0, arg1);
+	public CommandConfigException(Throwable arg0) {
+		super(arg0);
 		// TODO Auto-generated constructor stub
 	}
 

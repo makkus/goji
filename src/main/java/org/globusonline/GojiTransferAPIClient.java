@@ -41,7 +41,8 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.bestgrid.goji.commands.JGOCommand;
+import org.bestgrid.goji.commands.AbstractCommand;
+import org.bestgrid.goji.exceptions.RequestException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
@@ -259,7 +260,7 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient {
 	}
 
 	/**
-	 * This gets called from the Constructor of a {@link JGOCommand}.
+	 * This gets called from the Constructor of a {@link AbstractCommand}.
 	 * 
 	 * Don't invoke manually.
 	 * 
@@ -269,50 +270,66 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient {
 	 * @throws MalformedURLException
 	 * @throws GeneralSecurityException
 	 */
-	public void request(JGOCommand command) throws IOException,
-	MalformedURLException, GeneralSecurityException {
+	public void request(AbstractCommand command) throws RequestException {
 
 		String path = command.getPath();
 		if (!path.startsWith("/")) {
-			throw new MalformedURLException("Path doesn't start with '/'");
+			throw new RequestException("Path doesn't start with '/'");
 		}
 
-		initSocketFactory(false);
-		URL url = new URL(this.baseUrl + path);
+		try {
+			initSocketFactory(false);
+		} catch (Exception e) {
+			throw new RequestException("Can't init socket factory.", e);
+		}
+		URL url = null;
+		try {
+			url = new URL(this.baseUrl + path);
+		} catch (MalformedURLException e) {
+			throw new RequestException("Url not valid", e);
+		}
 		if (this.verbose) {
 			System.out.println("[***] Request Path: " + this.baseUrl + path);
 		}
-		HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
-		c.setConnectTimeout(this.timeout);
-		c.setSSLSocketFactory(this.socketFactory);
-		c.setRequestMethod(command.getMethod().toString());
-		c.setFollowRedirects(false);
-		c.setRequestProperty("X-Transfer-API-X509-User", this.username);
-		c.setRequestProperty("Accept", this.alt);
-		c.setUseCaches(false);
-		c.setDoInput(true);
-		c.setDoOutput(true);
-		c.setRequestProperty("Content-Type", this.alt);
-		if (command.getJsonData() != null) {
-			c.setRequestProperty(
-					"Content-Length",
-					""
-							+ Integer
-							.toString(command.getJsonData().getBytes().length));
-		} else {
-			c.setRequestProperty("Content-Length", "0");
-		}
-		c.setRequestProperty("Content-Language", "en-US");
-		c.connect();
 
-		if (command.getJsonData() != null) {
-			DataOutputStream wr = new DataOutputStream(c.getOutputStream());
-			wr.writeBytes(command.getJsonData());
-			wr.flush();
-			wr.close();
+		try {
+
+			HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
+			c.setConnectTimeout(this.timeout);
+			c.setSSLSocketFactory(this.socketFactory);
+			c.setRequestMethod(command.getMethod().toString());
+			c.setFollowRedirects(false);
+			c.setRequestProperty("X-Transfer-API-X509-User", this.username);
+			c.setRequestProperty("Accept", this.alt);
+			c.setUseCaches(false);
+			c.setDoInput(true);
+			c.setDoOutput(true);
+			c.setRequestProperty("Content-Type", this.alt);
+			if (command.getJsonData() != null) {
+				c.setRequestProperty(
+						"Content-Length",
+						""
+								+ Integer
+								.toString(command.getJsonData().getBytes().length));
+			} else {
+				c.setRequestProperty("Content-Length", "0");
+			}
+			c.setRequestProperty("Content-Language", "en-US");
+			c.connect();
+
+			if (command.getJsonData() != null) {
+				DataOutputStream wr = new DataOutputStream(c.getOutputStream());
+				wr.writeBytes(command.getJsonData());
+				wr.flush();
+				wr.close();
+			}
+
+			JSONArray result = getResult(c);
+			command.setResult(result);
+
+		} catch (Exception e) {
+			throw new RequestException("Can't perform request.", e);
 		}
 
-		JSONArray result = getResult(c);
-		command.setResult(result);
 	}
 }
