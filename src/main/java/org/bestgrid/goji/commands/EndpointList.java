@@ -1,9 +1,9 @@
-package org.globusonline.commands;
+package org.bestgrid.goji.commands;
 
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.globusonline.Endpoint;
+import org.bestgrid.goji.Endpoint;
 import org.globusonline.GojiTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;

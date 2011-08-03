@@ -1,4 +1,4 @@
-package org.globusonline.commands;
+package org.bestgrid.goji.commands;
 
 import org.globusonline.GojiTransferAPIClient;
 

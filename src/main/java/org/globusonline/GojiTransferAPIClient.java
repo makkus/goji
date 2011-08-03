@@ -41,10 +41,10 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.bestgrid.goji.commands.JGOCommand;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
-import org.globusonline.commands.JGOCommand;
 import org.json.JSONArray;
 
 /**
@@ -207,7 +207,7 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient {
 	 * 
 	 * @param go_username
 	 *            the Globus Online user to sign in to the API with.
-	 * @param trustedCAFile
+	 * @param cafile
 	 *            path to a PEM file with a list of certificates to trust for
 	 *            verifying the server certificate. If null, just use the trust
 	 *            store configured by property files and properties passed on
@@ -225,6 +225,8 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient {
 	 *            different versions of the API and instances running on
 	 *            alternate servers. If null, the URL of the latest version
 	 *            running on the production server is used.
+	 * @param verbose
+	 *            whether the client should be verbose or not
 	 */
 	public GojiTransferAPIClient(String go_username, String baseurl,
 			String certfile, String keyfile, String cafile, boolean verbose)
@@ -247,10 +249,26 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient {
 		initSocketFactory(true);
 	}
 
+	/**
+	 * Returns the globus online username.
+	 * 
+	 * @return the username
+	 */
 	public String getUsername() {
 		return super.username;
 	}
 
+	/**
+	 * This gets called from the Constructor of a {@link JGOCommand}.
+	 * 
+	 * Don't invoke manually.
+	 * 
+	 * @param command
+	 *            the command
+	 * @throws IOException
+	 * @throws MalformedURLException
+	 * @throws GeneralSecurityException
+	 */
 	public void request(JGOCommand command) throws IOException,
 	MalformedURLException, GeneralSecurityException {
 

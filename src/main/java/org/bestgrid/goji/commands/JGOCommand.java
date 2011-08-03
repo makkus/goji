@@ -1,4 +1,4 @@
-package org.globusonline.commands;
+package org.bestgrid.goji.commands;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -62,7 +62,7 @@ public abstract class JGOCommand {
 		if (config != null) {
 			return config.get(key);
 		} else {
-			throw new ConfigException("Key " + key + " not in config");
+			throw new CommandConfigException("Key " + key + " not in config");
 		}
 	}
 
