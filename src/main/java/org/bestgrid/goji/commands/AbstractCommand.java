@@ -118,6 +118,42 @@ public abstract class AbstractCommand {
 	}
 
 	/**
+	 * Helper method to extract results from within a child jsonarray of the
+	 * json object that GO returns.
+	 * 
+	 * @param parameter
+	 *            the parameter to extract
+	 * @return the value
+	 */
+	protected String extractFromResults(String arrayName, String parameter)
+	{
+		String value = null;
+		if (result != null)
+		{
+			try
+			{
+				JSONObject jsonO = result.getJSONObject(0);
+				if (jsonO != null) {
+					JSONArray dataArr = jsonO.getJSONArray(arrayName);
+					if ( dataArr != null ) {
+
+						JSONObject jobj = dataArr.getJSONObject(0);
+						if (jobj.get(parameter) != null)
+						{
+							value = jobj.get(parameter).toString();
+						}
+					}
+				}
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return value;
+	}
+
+	/**
 	 * Returns the value of the given config parameter.
 	 * 
 	 * Throws {@link CommandConfigException} if no such config parameter exists.
