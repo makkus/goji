@@ -1,14 +1,15 @@
 package org.bestgrid.goji.commands;
 
+import org.apache.commons.lang.StringUtils;
+import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.globusonline.GojiTransferAPIClient;
-import org.json.JSONObject;
 
 public class ActivationRequirements extends AbstractCommand {
 
 	public ActivationRequirements(GojiTransferAPIClient client, String endpoint) {
-		super(client, Input.ENDPOINT_NAME, endpoint);
+		super(client, GO_PARAM.ENDPOINT_NAME, endpoint);
 	}
 
 	@Override
@@ -19,7 +20,7 @@ public class ActivationRequirements extends AbstractCommand {
 	@Override
 	public String getPath() {
 		try {
-			return "/endpoint/" + getConfig(Input.ENDPOINT_NAME)
+			return "/endpoint/" + getConfig(GO_PARAM.ENDPOINT_NAME)
 					+ "/activation_requirements";
 		} catch (CommandConfigException e) {
 			// should not happen
@@ -35,16 +36,31 @@ public class ActivationRequirements extends AbstractCommand {
 	@Override
 	protected void processResult() {
 
-		String myProxyServer = null;
-		try {
-			JSONObject jobj = result.getJSONObject(0);
-			if (jobj.get("DATA") != null) {
-				myProxyServer = extractFromResults("DATA", "value");
-			}
-		} catch (Exception e) {
+		String myProxyServer = extractFromResults("DATA", "value");
+		if (StringUtils.isNotBlank(myProxyServer)) {
+			putOutput(GO_PARAM.MYPROXY_HOST, myProxyServer);
 		}
 
-		System.out.println("MyProxy: " + myProxyServer);
+		// TODO extract more values if necessary
+
+		// JSONObject obj = null;
+		// try {
+		// obj = result.getJSONObject(0);
+		// } catch (JSONException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+		//
+		// Iterator i = obj.keys();
+		//
+		// while (i.hasNext()) {
+		//
+		// Object o = i.next();
+		// System.out.println(o.toString());
+		//
+		// }
+		//
+		// System.out.println("MyProxy: " + myProxyServer);
 	}
 
 }

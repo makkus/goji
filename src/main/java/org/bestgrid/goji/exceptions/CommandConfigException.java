@@ -1,6 +1,6 @@
 package org.bestgrid.goji.exceptions;
 
-public class CommandConfigException extends Exception {
+public class CommandConfigException extends RuntimeException {
 
 	public CommandConfigException() {
 		// TODO Auto-generated constructor stub

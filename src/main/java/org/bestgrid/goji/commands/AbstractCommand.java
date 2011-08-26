@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.bestgrid.goji.Endpoint;
+import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.globusonline.GojiTransferAPIClient;
@@ -32,15 +33,18 @@ import com.google.common.collect.ImmutableMap;
  */
 public abstract class AbstractCommand {
 
-	enum Input {
-
-		ENDPOINT_NAME,
-		GRIDFTP_SERVER,
-		MYPROXY_SERVER,
-		SERVER_DN,
-		IS_GLOBUS_CONNECT,
-		IS_PUBLIC;
-	}
+	// enum Input {
+	//
+	// ENDPOINT_NAME,
+	// GRIDFTP_SERVER,
+	// MYPROXY_HOST,
+	// SERVER_DN,
+	// IS_GLOBUS_CONNECT,
+	// IS_PUBLIC,
+	// MYPROXY_USERNAME,
+	// MYPROXY_PASSWORD,
+	// PROXY_LIFETIME_IN_HOURS;
+	// }
 
 	public enum Method {
 		GET,
@@ -49,16 +53,19 @@ public abstract class AbstractCommand {
 		PUT
 	}
 
-	enum Output {
-		TYPE,
-		MESSAGE,
-		CODE,
-		RESOURCE,
-		REQ_ID,
-		GC_KEY,
-		CANONICAL_NAME;
-
-	}
+	// enum Output {
+	// TYPE,
+	// MESSAGE,
+	// CODE,
+	// RESOURCE,
+	// REQ_ID,
+	// GC_KEY,
+	// CANONICAL_NAME,
+	// MYPROXY_HOST,
+	// SUCCESS,
+	// SUBJECT,
+	// EXPIRE_TIME;
+	// }
 
 	public static final String NO_VALUE = "no_value";
 
@@ -66,23 +73,23 @@ public abstract class AbstractCommand {
 
 	protected JSONArray result = null;
 
-	private final Map<Input, String> config;
-	private Map<Output, String> output = null;
+	private final Map<GO_PARAM, String> config;
+	private Map<GO_PARAM, String> output = null;
 	private String jsonData = null;
 
 	public AbstractCommand(GojiTransferAPIClient client) {
 		this(client, null);
 	}
 
-	public AbstractCommand(GojiTransferAPIClient client, Input configInput,
+	public AbstractCommand(GojiTransferAPIClient client, GO_PARAM configInput,
 			String configValue) {
 		this(client,
-				new ImmutableMap.Builder<Input, String>().put(configInput,
+				new ImmutableMap.Builder<GO_PARAM, String>().put(configInput,
 						configValue).build());
 	}
 
 	public AbstractCommand(GojiTransferAPIClient client,
-			Map<Input, String> config) {
+			Map<GO_PARAM, String> config) {
 		this.client = client;
 		this.config = config;
 		init();
@@ -164,11 +171,11 @@ public abstract class AbstractCommand {
 	 * @throws CommandConfigException
 	 *             if no such config parameter exists
 	 */
-	public String getConfig(Input key) throws CommandConfigException {
+	public String getConfig(GO_PARAM key) {
 		if (config != null) {
 			return config.get(key);
 		} else {
-			throw new CommandConfigException("Key " + key + " not in config");
+			throw new CommandConfigException("Config not valid");
 		}
 	}
 
@@ -197,7 +204,7 @@ public abstract class AbstractCommand {
 	 * 
 	 * @return all processed output values
 	 */
-	public Map<Output,String> getOutput() {
+	public Map<GO_PARAM, String> getOutput() {
 		return output;
 	}
 
@@ -211,7 +218,7 @@ public abstract class AbstractCommand {
 	 *            the key for the output value you want to know
 	 * @return the value of the output value
 	 */
-	public String getOutput(Output key) {
+	public String getOutput(GO_PARAM key) {
 		return output.get(key);
 	}
 
@@ -221,6 +228,10 @@ public abstract class AbstractCommand {
 	 * @return the path
 	 */
 	abstract public String getPath();
+
+	public JSONArray getResult() {
+		return this.result;
+	}
 
 	/**
 	 * Init things you might need to do.
@@ -251,6 +262,7 @@ public abstract class AbstractCommand {
 		this.jsonData = jsonData;
 	}
 
+
 	/**
 	 * Use this method to add processed output values to the output value set of
 	 * this command.
@@ -265,13 +277,12 @@ public abstract class AbstractCommand {
 	 * @param value
 	 *            the value
 	 */
-	protected void putOutput(Output key, String value) {
+	protected void putOutput(GO_PARAM key, String value) {
 		if (output == null) {
 			throw new IllegalStateException("Result not set yet.");
 		}
 		this.output.put(key, value);
 	}
-
 
 	/**
 	 * Called by the {@link GojiTransferAPIClient} after the call succeeded.
@@ -282,7 +293,7 @@ public abstract class AbstractCommand {
 	 *            the query result
 	 */
 	public void setResult(JSONArray result) {
-		output = new TreeMap<Output, String>();
+		output = new TreeMap<GO_PARAM, String>();
 		this.result = result;
 		processResult();
 	}

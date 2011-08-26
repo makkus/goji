@@ -1,5 +1,6 @@
 package org.bestgrid.goji.commands;
 
+import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.globusonline.GojiTransferAPIClient;
@@ -8,7 +9,7 @@ public class EndpointRemove extends AbstractCommand {
 
 
 	public EndpointRemove(GojiTransferAPIClient client, String endpointName) {
-		super(client, Input.ENDPOINT_NAME, endpointName);
+		super(client, GO_PARAM.ENDPOINT_NAME, endpointName);
 	}
 
 	@Override
@@ -25,7 +26,7 @@ public class EndpointRemove extends AbstractCommand {
 	@Override
 	public String getPath() {
 		try {
-			return "/endpoint/" + getConfig(Input.ENDPOINT_NAME);
+			return "/endpoint/" + getConfig(GO_PARAM.ENDPOINT_NAME);
 		} catch (CommandConfigException e) {
 			throw new InitException(e);
 		}
@@ -41,12 +42,12 @@ public class EndpointRemove extends AbstractCommand {
 
 		if (result != null) {
 			String type = extractFromResults("DATA_TYPE");
-			putOutput(Output.TYPE, type);
+			putOutput(GO_PARAM.TYPE, type);
 			if (type.equals("result")) {
-				putOutput(Output.MESSAGE, extractFromResults("message"));
-				putOutput(Output.CODE, extractFromResults("code"));
-				putOutput(Output.RESOURCE, extractFromResults("resource"));
-				putOutput(Output.REQ_ID, extractFromResults("request_id"));
+				putOutput(GO_PARAM.MESSAGE, extractFromResults("message"));
+				putOutput(GO_PARAM.CODE, extractFromResults("code"));
+				putOutput(GO_PARAM.RESOURCE, extractFromResults("resource"));
+				putOutput(GO_PARAM.REQ_ID, extractFromResults("request_id"));
 			} else {
 				System.out.println("Got unknown result type: " + result);
 			}
@@ -56,7 +57,7 @@ public class EndpointRemove extends AbstractCommand {
 	@Override
 	public String toString() {
 		StringBuffer strbuf = new StringBuffer("\n");
-		strbuf.append(getOutput(Output.MESSAGE));
+		strbuf.append(getOutput(GO_PARAM.MESSAGE));
 		strbuf.append("\n");
 		return strbuf.toString();
 	}
