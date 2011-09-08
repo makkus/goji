@@ -60,11 +60,6 @@
   		<version>0.5.9-SNAPSHOT</version>
   	</dependency>
   	<dependency>
-  		<groupId>au.org.arcs.infosystems</groupId>
-  		<artifactId>mysql-mds</artifactId>
-  		<version>0.8.8-SNAPSHOT</version>
-  	</dependency>
-  	<dependency>
   		<groupId>grisu.frontend</groupId>
   		<artifactId>grisu-client</artifactId>
   		<version>0.3.6-SNAPSHOT</version>
@@ -76,5 +71,20 @@
 		<type>jar</type>
 		<scope>compile</scope>
 	</dependency>
-  </dependencies>
+  	<dependency>
+  		<groupId>au.org.arcs.infosystems</groupId>
+  		<artifactId>simplinfo</artifactId>
+  		<version>0.8.9-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>au.org.arcs.infosystems</groupId>
+  		<artifactId>mysql-mds</artifactId>
+  		<version>0.8.9-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>au.org.arcs.infosystems</groupId>
+  		<artifactId>mds4-client</artifactId>
+  		<version>0.8.9-SNAPSHOT</version>
+  	</dependency>
+	</dependencies>
 </project>
