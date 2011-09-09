@@ -57,7 +57,7 @@
   	<dependency>
   		<groupId>grith</groupId>
   		<artifactId>jgrith</artifactId>
-  		<version>0.5.9-SNAPSHOT</version>
+  		<version>0.6-SNAPSHOT</version>
   	</dependency>
   	<dependency>
   		<groupId>grisu.frontend</groupId>
@@ -85,6 +85,11 @@
   		<groupId>au.org.arcs.infosystems</groupId>
   		<artifactId>mds4-client</artifactId>
   		<version>0.8.9-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>grisu</groupId>
+  		<artifactId>grid-jcommons</artifactId>
+  		<version>1.4-SNAPSHOT</version>
   	</dependency>
 	</dependencies>
 </project>

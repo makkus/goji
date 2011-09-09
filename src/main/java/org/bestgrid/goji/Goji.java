@@ -2,11 +2,12 @@ package org.bestgrid.goji;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
+import java.util.Set;
 
 import org.bestgrid.goji.commands.EndpointList;
-import org.bestgrid.goji.commands.EndpointRemove;
-import org.bestgrid.simplinfo.SimplinfoManager;
+import org.bestgrid.simplinfo.model.Directory;
+import org.bestgrid.simplinfo.model.InfoManager;
+import org.bestgrid.simplinfo.model.InfoManagerImpl;
 import org.globusonline.GojiTransferAPIClient;
 
 public class Goji {
@@ -18,7 +19,7 @@ public class Goji {
 	public static void main(String[] args) throws KeyManagementException,
 	NoSuchAlgorithmException, Exception {
 
-		SimplinfoManager im = new SimplinfoManager();
+		InfoManager im = new InfoManagerImpl();
 
 		String go_username = "nz";
 
@@ -48,31 +49,44 @@ public class Goji {
 
 		System.out.println("Endpoints: " + epL.getEndpoints().size());
 
-		for (Endpoint e : epL.getEndpoints().values()) {
-
-			if (e.username.equals(go_username)) {
-				try {
-					System.out.println("Removing: " + e.name);
-					EndpointRemove epR = new EndpointRemove(client, e.name);
-					System.out.println(epR.toString());
-				} catch (Exception ex) {
-					System.err.println(ex.getLocalizedMessage());
-				}
-			}
-
-		}
+		// for (Endpoint e : epL.getEndpoints().values()) {
+		//
+		// if (e.username.equals(go_username)) {
+		// try {
+		// System.out.println("Removing: " + e.name);
+		// EndpointRemove epR = new EndpointRemove(client, e.name);
+		// System.out.println(epR.toString());
+		// } catch (Exception ex) {
+		// System.err.println(ex.getLocalizedMessage());
+		// }
+		// }
+		//
+		// }
 
 		String[] fqans = new String[] { "/nz/nesi", "/nz/test" };
 
 		for (String fqan : fqans) {
+			System.out.println(fqan + "\n=====\n");
 
-			Map<String, String[]> dls = im.getDataLocationsForVO(fqan);
+			Set<Directory> dirs = im.getDirectoriesForVO(fqan);
 
-			for (String dl : dls.keySet()) {
-				System.out.println("Host: " + dl + " / Group: " + fqan);
+			for (Directory d : dirs) {
+				System.out.println(d.toString());
 			}
 
 		}
+
+		// for (String fqan : fqans) {
+		// Set<FileSystem> fss = im.getFileSystemsForVO(fqan);
+		// for (FileSystem fs : fss) {
+		// EndpointAdd ea = new EndpointAdd(client, fs.getHost(),
+		// "myproxy.arcs.org.au", null, false, true,
+		// EndpointHelpers.translateIntoEndpointName(fs.getHost(),
+		// fqan));
+		//
+		// }
+		//
+		// }
 
 	}
 

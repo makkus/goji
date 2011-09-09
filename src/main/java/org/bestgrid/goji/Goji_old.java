@@ -37,7 +37,8 @@ public class Goji_old {
 
 		InformationManager im = new CachedMdsInformationManager((String) null);
 
-		Map<String, String[]> dls = im.getDataLocationsForVO("/nz/nesi");
+		Map<String, String[]> dls = im
+				.getDataLocationsForVO("/nz/virtual-screening/sbs-structural-biology");
 
 		for (String se : dls.keySet()) {
 			X.p("Storage element: " + se);
