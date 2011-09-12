@@ -1,8 +1,9 @@
 package org.bestgrid.goji;
 
+import grisu.jcommons.model.info.FileSystem;
+
 import java.util.Set;
 
-import org.bestgrid.simplinfo.model.FileSystem;
 
 import com.google.common.collect.Sets;
 

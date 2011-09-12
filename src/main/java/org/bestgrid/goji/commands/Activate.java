@@ -1,6 +1,7 @@
 package org.bestgrid.goji.commands;
 
 import org.apache.commons.lang.StringUtils;
+import org.bestgrid.goji.Credential;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
@@ -13,6 +14,15 @@ import org.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 
 public class Activate extends AbstractCommand {
+
+	public Activate(GojiTransferAPIClient client, String endpoint,
+			Credential cred, Integer lifetime_in_hours) {
+
+		this(client, endpoint, cred.getMyProxyServer(), cred
+				.getMyProxyUsername(), cred.getMyProxyPassword(),
+				lifetime_in_hours);
+
+	}
 
 	public Activate(GojiTransferAPIClient client, String endpoint,
 			String myproxyServer, String myproxyUsername,

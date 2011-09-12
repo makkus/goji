@@ -1,9 +1,13 @@
 package org.bestgrid.goji;
 
+import grisu.jcommons.interfaces.InfoManager;
+import grisu.jcommons.model.info.Directory;
+import grisu.jcommons.model.info.FileSystem;
 import grith.jgrith.CredentialHelpers;
 import grith.jgrith.myProxy.MyProxy_light;
 import grith.jgrith.plainProxy.LocalProxy;
 import grith.jgrith.plainProxy.PlainProxy;
+import grith.jgrith.voms.VO;
 import grith.jgrith.voms.VOManagement.VOManagement;
 
 import java.io.File;
@@ -11,36 +15,36 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+import org.bestgrid.goji.commands.Activate;
 import org.bestgrid.goji.commands.EndpointAdd;
 import org.bestgrid.goji.commands.EndpointList;
 import org.bestgrid.goji.commands.EndpointRemove;
 import org.bestgrid.goji.utils.EndpointHelpers;
-import org.bestgrid.simplinfo.model.Directory;
-import org.bestgrid.simplinfo.model.FileSystem;
-import org.bestgrid.simplinfo.model.InfoManager;
-import org.bestgrid.simplinfo.model.InfoManagerImpl;
 import org.globus.common.CoGProperties;
 import org.globus.myproxy.MyProxyException;
 import org.globusonline.GojiTransferAPIClient;
 import org.ietf.jgss.GSSCredential;
+import org.vpac.grisu.control.info.SqlInfoManager;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class User {
 
-	private static InfoManager im = new InfoManagerImpl();
+	static final Logger myLogger = Logger.getLogger(User.class.getName());
 
-	private final int DEFAULT_PROXY_LIFETIME_IN_HOURS = 12;
-	private final String DEFAULT_MYPROXY_SERVER = "myproxy.arcs.org.au";
+	// private static InfoManager im = new InfoManagerImpl();
+	private static InfoManager im = new SqlInfoManager();
 
 	private GojiTransferAPIClient client = null;
 
 	private final String go_username;
 
 	private GSSCredential currentProxy = null;
+	private final Map<String, Credential> proxies = Maps.newConcurrentMap();
 
-	private Set<String> fqans = null;
+	private Map<String, VO> fqans = null;
 
 	private EndpointList endpointList = null;
 
@@ -61,6 +65,9 @@ public class User {
 
 		if (LocalProxy.validGridProxyExists()) {
 			init(null);
+		} else {
+			throw new UserInitException(
+					"No valid proxy credential found. Can't init user.");
 		}
 	}
 
@@ -104,7 +111,30 @@ public class User {
 				myproxy_port);
 	}
 
-	public void activateEndpoint(Directory dir) {
+	public void activateAllEndpoints() {
+
+		Map<String, Endpoint> allEndpoints = getEndpoints();
+
+		for (Directory d : directories) {
+			try {
+				activateEndpoint(d);
+			} catch (CredentialException e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	public void activateEndpoint(Directory dir) throws CredentialException {
+
+		String epName = EndpointHelpers.translateIntoEndpointName(dir.getFilesystem().getHost(), dir.getFqan());
+
+		myLogger.debug("Activating endpoint: " + epName);
+
+		Credential cred = getCredential(dir.getFqan());
+		cred.uploadMyProxy();
+
+		Activate a = new Activate(client, epName, cred, 12);
 
 	}
 
@@ -120,7 +150,11 @@ public class User {
 	}
 
 	public void addEndpoint(String host, String fqan, String epName) {
-		EndpointAdd ea = new EndpointAdd(client, host, DEFAULT_MYPROXY_SERVER,
+
+		myLogger.debug("Adding endpoint for: " + epName);
+
+		EndpointAdd ea = new EndpointAdd(client, host,
+				Credential.DEFAULT_MYPROXY_SERVER,
 				null, false, true, epName);
 
 		endpointList = null;
@@ -145,6 +179,12 @@ public class User {
 		}
 	}
 
+	/**
+	 * Returns a list of all public endpoints as well as the users' private
+	 * endpoints.
+	 * 
+	 * @return all endpoints
+	 */
 	public Map<String, Endpoint> getAllEndpoints() {
 
 		if (endpointList == null) {
@@ -152,6 +192,25 @@ public class User {
 		}
 
 		return endpointList.getEndpoints();
+	}
+
+	public GojiTransferAPIClient getClient() {
+		return client;
+	}
+
+
+	public Credential getCredential(String fqan) throws CredentialException {
+
+		Credential result = proxies.get(fqan);
+
+		if (result == null) {
+
+			result = new Credential(currentProxy, fqans.get(fqan), fqan);
+			proxies.put(fqan, result);
+		}
+
+		return proxies.get(fqan);
+
 	}
 
 	/**
@@ -163,6 +222,14 @@ public class User {
 		return directories;
 	}
 
+	/**
+	 * Returns a map of all endpoints that the user has access to (calculated
+	 * using info provider).
+	 * 
+	 * Key is endpoint name, value endpoint class.
+	 * 
+	 * @return a map of all of the users' endpoints
+	 */
 	public Map<String, Endpoint> getEndpoints() {
 
 		Map<String, Endpoint> result = Maps.newTreeMap();
@@ -191,7 +258,13 @@ public class User {
 	}
 
 	public Set<String> getFqans() {
-		return this.fqans;
+		return this.fqans.keySet();
+	}
+
+	public void getProxy(String fqan) {
+
+
+
 	}
 
 	/**
@@ -239,13 +312,12 @@ public class User {
 		}
 
 		// getting VOs of user
-		Map<String, String> vos = VOManagement.getAllFqans(cred, false);
-		fqans = vos.keySet();
+		fqans = VOManagement.getAllFqans(cred, false);
 
 		// calculate all the directories a user has access to
 		directories.clear();
 		filesystems.clear();
-		for (String fqan : fqans) {
+		for (String fqan : fqans.keySet()) {
 			directories.addAll(im.getDirectoriesForVO(fqan));
 		}
 		for (Directory dir : directories) {
@@ -264,8 +336,8 @@ public class User {
 
 		try {
 			GSSCredential cred = MyProxy_light.getDelegation(myproxyHost,
-					myproxyPort, username,
-					password, DEFAULT_PROXY_LIFETIME_IN_HOURS * 3600);
+					myproxyPort, username, password,
+					Credential.DEFAULT_PROXY_LIFETIME_IN_HOURS * 3600);
 			init(cred);
 		} catch (MyProxyException e) {
 			throw new UserInitException(e);
@@ -283,7 +355,7 @@ public class User {
 
 		try {
 			GSSCredential credential = PlainProxy.init(cert_password,
-					DEFAULT_PROXY_LIFETIME_IN_HOURS);
+					Credential.DEFAULT_PROXY_LIFETIME_IN_HOURS);
 			init(credential);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -307,6 +379,8 @@ public class User {
 	}
 
 	public void removeEndpoint(String alias) {
+
+		myLogger.debug("Removing endpoint: " + alias);
 		EndpointRemove er = new EndpointRemove(client, alias);
 
 		endpointList = null;

@@ -3,6 +3,7 @@ package org.bestgrid.goji.commands;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
 import org.bestgrid.goji.Endpoint;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
@@ -77,6 +78,9 @@ public abstract class AbstractCommand {
 	private Map<GO_PARAM, String> output = null;
 	private String jsonData = null;
 
+	static final Logger myLogger = Logger.getLogger(AbstractCommand.class
+			.getName());
+
 	public AbstractCommand(GojiTransferAPIClient client) {
 		this(client, null);
 	}
@@ -90,10 +94,16 @@ public abstract class AbstractCommand {
 
 	public AbstractCommand(GojiTransferAPIClient client,
 			Map<GO_PARAM, String> config) {
+
+		String name = this.getClass().getSimpleName();
+		myLogger.debug("Creating GO command: " + name);
 		this.client = client;
 		this.config = config;
+		myLogger.debug("Initializing GO command: " + name);
 		init();
+		myLogger.debug("Executing GO command: " + name);
 		client.request(this);
+		myLogger.debug("Executed GO command: " + name);
 	}
 
 	/**

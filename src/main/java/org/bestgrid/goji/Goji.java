@@ -1,12 +1,13 @@
 package org.bestgrid.goji;
 
+import grisu.jcommons.interfaces.InfoManager;
+import grisu.jcommons.model.info.Directory;
+
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 
 import org.bestgrid.goji.commands.EndpointList;
-import org.bestgrid.simplinfo.model.Directory;
-import org.bestgrid.simplinfo.model.InfoManager;
 import org.bestgrid.simplinfo.model.InfoManagerImpl;
 import org.globusonline.GojiTransferAPIClient;
 
