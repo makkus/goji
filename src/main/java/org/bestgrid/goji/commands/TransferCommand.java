@@ -132,8 +132,6 @@ public class TransferCommand extends AbstractCommand {
 		try {
 			SubmissionIdCommand sidc = new SubmissionIdCommand(client);
 			submissionId = sidc.getOutput(GO_PARAM.SUBMISSION_ID);
-
-			System.out.println(submissionId);
 		} catch (Exception e) {
 			throw new InitException("Can't get submission id.", e);
 		}

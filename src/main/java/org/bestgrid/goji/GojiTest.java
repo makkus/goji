@@ -3,6 +3,7 @@ package org.bestgrid.goji;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.bestgrid.goji.commands.TaskInfoCommand;
 import org.bestgrid.goji.commands.TransferCommand;
 
 
@@ -12,7 +13,7 @@ public class GojiTest {
 	 * @param args
 	 * @throws UserInitException
 	 */
-	public static void main(String[] args) throws UserInitException {
+	public static void main(String[] args) throws Exception {
 
 		User user = null;
 
@@ -59,10 +60,24 @@ public class GojiTest {
 		// user.activateAllEndpoints();
 
 		TransferCommand tc = new TransferCommand(user.getClient(),
-				"nz#df_auckland_ac_nz--nz_nesi/~/test.file",
-				"nz#gram5_ceres_auckland_ac_nz--nz_uoa/~/test.result.file");
+				"nz#df_auckland_ac_nz--nz_nesi/~/test.file;nz#df_auckland_ac_nz--nz_nesi/~/testfile.txt",
+				"nz#gram5_ceres_auckland_ac_nz--nz_uoa/~/test.result3.file;nz#gram5_ceres_auckland_ac_nz--nz_uoa/~/testfile3.result.txt");
 
-		System.out.println("Task_id: " + tc.getOutput(GO_PARAM.TASK_ID));
+		String id = tc.getOutput(GO_PARAM.TASK_ID);
+
+		System.out.println("Task_id: " + id);
+
+		while (true) {
+			TaskInfoCommand ti = new TaskInfoCommand(user.getClient(), id);
+
+			String status = ti.getTaskInfo().getStatus();
+			System.out.println(status);
+			if (!"ACTIVE".equals(status)) {
+				break;
+			}
+
+			Thread.sleep(5000);
+		}
 
 	}
 
