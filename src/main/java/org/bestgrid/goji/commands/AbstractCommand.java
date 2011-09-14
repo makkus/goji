@@ -3,6 +3,7 @@ package org.bestgrid.goji.commands;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.bestgrid.goji.Endpoint;
 import org.bestgrid.goji.GO_PARAM;
@@ -77,6 +78,8 @@ public abstract class AbstractCommand {
 	private final Map<GO_PARAM, String> config;
 	private Map<GO_PARAM, String> output = null;
 	private String jsonData = null;
+
+	private int responseCode = -1;
 
 	static final Logger myLogger = Logger.getLogger(AbstractCommand.class
 			.getName());
@@ -183,7 +186,13 @@ public abstract class AbstractCommand {
 	 */
 	public String getConfig(GO_PARAM key) {
 		if (config != null) {
-			return config.get(key);
+			String result = config.get(key);
+			if (StringUtils.isBlank(result) || NO_VALUE.equals(result)) {
+				return null;
+			} else {
+				return result;
+			}
+
 		} else {
 			throw new CommandConfigException("Config not valid");
 		}
@@ -239,6 +248,10 @@ public abstract class AbstractCommand {
 	 */
 	abstract public String getPath();
 
+	public int getResponseCode() {
+		return responseCode;
+	}
+
 	public JSONArray getResult() {
 		return this.result;
 	}
@@ -246,10 +259,9 @@ public abstract class AbstractCommand {
 	/**
 	 * Init things you might need to do.
 	 * 
-	 * Maybe also check whether config is valid or create json data for
-	 * {@link #getJsonData()}.
+	 * Maybe also check whether config is valid {@link #getJsonData()}.
 	 * 
-	 * If you need to populated jsondata, you need to do it via
+	 * If you need to populate jsondata, you need to do it via
 	 * {@link #putJsonData(String)}.
 	 * 
 	 * @throws InitException
@@ -302,9 +314,10 @@ public abstract class AbstractCommand {
 	 * @param result
 	 *            the query result
 	 */
-	public void setResult(JSONArray result) {
+	public void setResult(JSONArray result, int responseCode) {
 		output = new TreeMap<GO_PARAM, String>();
 		this.result = result;
+		this.responseCode = responseCode;
 		processResult();
 	}
 

@@ -16,20 +16,37 @@
  */
 package org.bestgrid.goji;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class Endpoint {
-	public int port;
-	public String canonical_name, username, description, myproxy_server,
-	activated, name;
-	public String expire_time, is_public, ls_link, scheme, subject, hostname,
-	uri;
-	public String hosts, subjects, status, expires;
-	public boolean username_matches, is_globus_connect;
 
-	public Endpoint(JSONObject jobj, String username) throws Exception
+	private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
+			"yyyy-MM-dd HH:mm:ss");
 	{
+		DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
+	}
+
+	private int port;
+
+	private String canonical_name, username, description, myproxy_server,
+	activated, name;
+
+	private String expire_time, is_public, ls_link, scheme, subject, hostname,
+	uri;
+
+	private String hosts, subjects, status;
+
+	private boolean username_matches, is_globus_connect;
+
+	private Date expires;
+
+	public Endpoint(JSONObject jobj, String username) throws Exception {
 		createFromJSON(jobj, username);
 	}
 
@@ -46,6 +63,9 @@ public class Endpoint {
 		this.activated = jobj.getString("activated");
 		this.name = jobj.getString("name");
 		this.expire_time = jobj.getString("expire_time");
+		if ("null".equals(this.expire_time)) {
+			this.expire_time = null;
+		}
 		this.is_public = jobj.getString("public");
 		this.ls_link = jobj.getString("ls_link");
 
@@ -99,17 +119,32 @@ public class Endpoint {
 		this.username_matches = (this.username.equals(username) ? true : false);
 
 		this.status = "n/a";
-		this.expires = "n/a";
 
 		if (jobj.get("activated") != null) {
 			if (jobj.getString("activated").equals("true")) {
 				this.status = "ACTIVE";
 			}
 		}
-		if ((jobj.get("expire_time") != null)
-				&& !jobj.get("expire_time").equals("null")) {
-			this.expires = jobj.getString("expire_time");
+		if (StringUtils.isNotBlank(this.expire_time)
+				&& !"null".equals(this.expire_time)) {
+			System.out.println("Expire time: "+expire_time);
+			this.expires = DATE_FORMAT.parse(this.expire_time);
+			System.out.println("Expire date: " + this.expires.toGMTString());
 		}
+	}
+
+
+
+	public Date getExpires() {
+		return expires;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getUsername() {
+		return username;
 	}
 
 	@Override

@@ -324,8 +324,10 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient {
 				wr.close();
 			}
 
+			int responseCode = c.getResponseCode();
+
 			JSONArray result = getResult(c);
-			command.setResult(result);
+			command.setResult(result, responseCode);
 
 		} catch (Exception e) {
 			throw new RequestException("Can't perform request.", e);

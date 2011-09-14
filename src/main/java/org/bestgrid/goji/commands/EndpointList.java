@@ -53,7 +53,7 @@ public class EndpointList extends AbstractCommand {
 				for (int j = 0; j < dataArr.length(); j++) {
 					JSONObject data = dataArr.getJSONObject(j);
 					Endpoint ep = new Endpoint(data, client.getUsername());
-					endpoints.put(ep.name, ep);
+					endpoints.put(ep.getName(), ep);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();

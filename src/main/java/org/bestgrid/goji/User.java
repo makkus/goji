@@ -235,7 +235,7 @@ public class User {
 		Map<String, Endpoint> result = Maps.newTreeMap();
 		Map<String, Endpoint> allendpoints = getAllEndpoints();
 		for ( String ep : allendpoints.keySet()) {
-			if ( allendpoints.get(ep).username.equals(go_username) ) {
+			if (allendpoints.get(ep).getUsername().equals(go_username)) {
 				result.put(ep, allendpoints.get(ep));
 			}
 		}
