@@ -1,4 +1,4 @@
-package org.bestgrid.goji;
+package org.bestgrid.goji.control;
 
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
@@ -16,10 +16,15 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.bestgrid.goji.CredentialException;
+import org.bestgrid.goji.Goji;
 import org.bestgrid.goji.commands.Activate;
 import org.bestgrid.goji.commands.EndpointAdd;
 import org.bestgrid.goji.commands.EndpointList;
 import org.bestgrid.goji.commands.EndpointRemove;
+import org.bestgrid.goji.exceptions.UserInitException;
+import org.bestgrid.goji.model.Credential;
+import org.bestgrid.goji.model.Endpoint;
 import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globus.common.CoGProperties;
 import org.globus.myproxy.MyProxyException;
@@ -361,6 +366,20 @@ public class User {
 			e.printStackTrace();
 		} finally {
 			Arrays.fill(cert_password, 'x');
+		}
+
+	}
+
+	public void invalidateCredentials() {
+
+		for (Credential cred : proxies.values()) {
+
+			try {
+				cred.invalidate();
+			} catch (CredentialException e) {
+				e.printStackTrace();
+			}
+
 		}
 
 	}

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bestgrid.goji;
+package org.bestgrid.goji.model;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

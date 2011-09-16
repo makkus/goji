@@ -5,6 +5,9 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.commands.TaskInfoCommand;
 import org.bestgrid.goji.commands.TransferCommand;
+import org.bestgrid.goji.control.User;
+import org.bestgrid.goji.exceptions.UserInitException;
+import org.bestgrid.goji.model.Endpoint;
 
 
 public class GojiTest {
@@ -57,9 +60,12 @@ public class GojiTest {
 		// System.out.println(ep);
 		// }
 
-		// user.activateAllEndpoints();
+		user.activateAllEndpoints();
 
-		TransferCommand tc = new TransferCommand(user.getClient(),
+		user.invalidateCredentials();
+
+		TransferCommand tc = new TransferCommand(
+				user.getClient(),
 				"nz#df_auckland_ac_nz--nz_nesi/~/test.file;nz#df_auckland_ac_nz--nz_nesi/~/testfile.txt",
 				"nz#gram5_ceres_auckland_ac_nz--nz_uoa/~/test.result3.file;nz#gram5_ceres_auckland_ac_nz--nz_uoa/~/testfile3.result.txt");
 

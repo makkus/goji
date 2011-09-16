@@ -1,8 +1,8 @@
 package org.bestgrid.goji.commands;
 
 import org.bestgrid.goji.GO_PARAM;
-import org.bestgrid.goji.TaskInfo;
 import org.bestgrid.goji.exceptions.InitException;
+import org.bestgrid.goji.model.TaskInfo;
 import org.globusonline.GojiTransferAPIClient;
 
 public class TaskInfoCommand extends AbstractCommand {

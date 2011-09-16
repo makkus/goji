@@ -1,11 +1,11 @@
 package org.bestgrid.goji.commands;
 
 import org.apache.commons.lang.StringUtils;
-import org.bestgrid.goji.Credential;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.bestgrid.goji.exceptions.RequestException;
+import org.bestgrid.goji.model.Credential;
 import org.globusonline.GojiTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONException;

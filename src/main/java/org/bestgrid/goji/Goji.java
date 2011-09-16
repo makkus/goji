@@ -13,8 +13,8 @@ import org.globusonline.GojiTransferAPIClient;
 
 public class Goji {
 
-	static final String VERSION = "v0.10";
-	static final String DEFAULT_BASE_URL = "https://transfer.api.globusonline.org/"
+	public static final String VERSION = "v0.10";
+	public static final String DEFAULT_BASE_URL = "https://transfer.api.globusonline.org/"
 			+ VERSION;
 
 	public static void main(String[] args) throws KeyManagementException,

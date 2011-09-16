@@ -3,7 +3,7 @@ package org.bestgrid.goji.commands;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.bestgrid.goji.Endpoint;
+import org.bestgrid.goji.model.Endpoint;
 import org.globusonline.GojiTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;

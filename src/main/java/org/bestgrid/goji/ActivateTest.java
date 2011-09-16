@@ -4,6 +4,10 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.commands.Activate;
+import org.bestgrid.goji.control.User;
+import org.bestgrid.goji.exceptions.UserInitException;
+import org.bestgrid.goji.model.Credential;
+import org.bestgrid.goji.model.Endpoint;
 
 public class ActivateTest {
 

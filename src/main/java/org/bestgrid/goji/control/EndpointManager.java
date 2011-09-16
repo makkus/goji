@@ -1,4 +1,4 @@
-package org.bestgrid.goji;
+package org.bestgrid.goji.control;
 
 import grisu.jcommons.model.info.FileSystem;
 

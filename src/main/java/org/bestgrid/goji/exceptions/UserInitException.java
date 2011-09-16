@@ -1,4 +1,4 @@
-package org.bestgrid.goji;
+package org.bestgrid.goji.exceptions;
 
 public class UserInitException extends Exception {
 

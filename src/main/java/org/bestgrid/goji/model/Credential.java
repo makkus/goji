@@ -1,4 +1,4 @@
-package org.bestgrid.goji;
+package org.bestgrid.goji.model;
 
 import grith.jgrith.CredentialHelpers;
 import grith.jgrith.myProxy.MyProxy_light;
@@ -11,7 +11,9 @@ import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.bestgrid.goji.CredentialException;
 import org.globus.gsi.GlobusCredentialException;
+import org.globus.myproxy.DestroyParams;
 import org.globus.myproxy.InitParams;
 import org.globus.myproxy.MyProxy;
 import org.globus.myproxy.MyProxyException;
@@ -46,11 +48,14 @@ public class Credential {
 
 	private String localPath = null;
 
+	private final String fqan;
+
 	private final UUID uuid = UUID.randomUUID();
 
 	public Credential(GSSCredential cred) throws CredentialException {
 		this.cred = cred;
 		this.myproxyCredential = false;
+		this.fqan = null;
 
 		getCredential();
 	}
@@ -58,6 +63,7 @@ public class Credential {
 	public Credential(GSSCredential cred, VO vo, String fqan)
 			throws CredentialException {
 
+		this.fqan = fqan;
 		try {
 			VomsProxy vp = new VomsProxy(vo, fqan,
 					CredentialHelpers.unwrapGlobusCredential(cred), new Long(
@@ -81,6 +87,7 @@ public class Credential {
 		}
 		this.localPath = localPath;
 		this.myproxyCredential = false;
+		this.fqan = null;
 	}
 
 	public Credential(String myProxyUsername, char[] myProxyPassword)
@@ -90,6 +97,8 @@ public class Credential {
 		this.myProxyPassword = myProxyPassword;
 		this.myproxyCredential = true;
 		getCredential();
+		// TODO: check cred for vo info
+		this.fqan = null;
 	}
 
 	@Override
@@ -143,6 +152,10 @@ public class Credential {
 		return cred;
 	}
 
+	public String getFqan() {
+		return this.fqan;
+	}
+
 	public char[] getMyProxyPassword() {
 
 		if (myproxyCredential) {
@@ -192,6 +205,24 @@ public class Credential {
 				return uuid.hashCode();
 			}
 		}
+	}
+
+	public void invalidate() throws CredentialException {
+
+		myLogger.debug("Invalidating credential for " + fqan);
+
+		DestroyParams request = new DestroyParams();
+		request.setUserName(myProxyUsername);
+		request.setPassphrase(new String(myProxyPassword));
+
+		MyProxy mp = new MyProxy(myProxyHostNew, myProxyPortNew);
+		try {
+			mp.destroy(getCredential(), request);
+		} catch (Exception e) {
+			throw new CredentialException(
+					"Could not destroy myproxy credential.", e);
+		}
+
 	}
 
 	public boolean isMyProxyCredential() {

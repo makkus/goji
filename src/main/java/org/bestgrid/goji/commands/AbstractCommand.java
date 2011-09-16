@@ -5,10 +5,10 @@ import java.util.TreeMap;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.bestgrid.goji.Endpoint;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
+import org.bestgrid.goji.model.Endpoint;
 import org.globusonline.GojiTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
