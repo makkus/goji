@@ -5,7 +5,7 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.commands.Activate;
 import org.bestgrid.goji.control.User;
-import org.bestgrid.goji.exceptions.UserInitException;
+import org.bestgrid.goji.exceptions.UserException;
 import org.bestgrid.goji.model.Credential;
 import org.bestgrid.goji.model.Endpoint;
 
@@ -13,10 +13,10 @@ public class ActivateTest {
 
 	/**
 	 * @param args
-	 * @throws UserInitException
+	 * @throws UserException
 	 * @throws CredentialException
 	 */
-	public static void main(String[] args) throws UserInitException,
+	public static void main(String[] args) throws UserException,
 	CredentialException {
 
 		User user = null;

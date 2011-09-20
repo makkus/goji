@@ -96,6 +96,13 @@ public abstract class AbstractCommand {
 	}
 
 	public AbstractCommand(GojiTransferAPIClient client,
+			GO_PARAM inputKey1, String input1, GO_PARAM inputKey2, String input2) {
+		this(client,
+				new ImmutableMap.Builder<GO_PARAM, String>().put(inputKey1,
+						input1).put(inputKey2, input2).build());
+	}
+
+	public AbstractCommand(GojiTransferAPIClient client,
 			Map<GO_PARAM, String> config) {
 
 		String name = this.getClass().getSimpleName();
@@ -213,7 +220,7 @@ public abstract class AbstractCommand {
 	 * 
 	 * @return the method
 	 */
-	abstract public Method getMethod();
+	abstract public Method getMethodType();
 
 	/**
 	 * Returns all processed output values.

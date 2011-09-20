@@ -107,7 +107,7 @@ public class TransferCommand extends AbstractCommand {
 	}
 
 	@Override
-	public Method getMethod() {
+	public Method getMethodType() {
 		return Method.POST;
 	}
 

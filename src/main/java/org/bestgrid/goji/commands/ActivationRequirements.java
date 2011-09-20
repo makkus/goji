@@ -13,7 +13,7 @@ public class ActivationRequirements extends AbstractCommand {
 	}
 
 	@Override
-	public Method getMethod() {
+	public Method getMethodType() {
 		return Method.GET;
 	}
 

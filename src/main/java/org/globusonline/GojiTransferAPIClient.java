@@ -297,7 +297,7 @@ public class GojiTransferAPIClient extends BaseTransferAPIClient {
 			HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
 			c.setConnectTimeout(this.timeout);
 			c.setSSLSocketFactory(this.socketFactory);
-			c.setRequestMethod(command.getMethod().toString());
+			c.setRequestMethod(command.getMethodType().toString());
 			c.setFollowRedirects(false);
 			c.setRequestProperty("X-Transfer-API-X509-User", this.username);
 			c.setRequestProperty("Accept", this.alt);

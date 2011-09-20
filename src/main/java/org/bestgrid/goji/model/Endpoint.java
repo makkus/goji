@@ -127,9 +127,7 @@ public class Endpoint {
 		}
 		if (StringUtils.isNotBlank(this.expire_time)
 				&& !"null".equals(this.expire_time)) {
-			System.out.println("Expire time: "+expire_time);
 			this.expires = DATE_FORMAT.parse(this.expire_time);
-			System.out.println("Expire date: " + this.expires.toGMTString());
 		}
 	}
 
@@ -139,12 +137,20 @@ public class Endpoint {
 		return expires;
 	}
 
+	public String getHostname() {
+		return hostname;
+	}
+
 	public String getName() {
 		return name;
 	}
 
 	public String getUsername() {
 		return username;
+	}
+
+	public boolean isActivated() {
+		return Boolean.parseBoolean(activated);
 	}
 
 	@Override

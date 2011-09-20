@@ -94,7 +94,7 @@ public class Activate extends AbstractCommand {
 	}
 
 	@Override
-	public Method getMethod() {
+	public Method getMethodType() {
 		return Method.POST;
 	}
 

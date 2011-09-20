@@ -3,6 +3,8 @@ package org.bestgrid.goji.control;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
+import grisu.jcommons.model.info.GFile;
+import grisu.jcommons.utils.FileAndUrlHelpers;
 import grith.jgrith.CredentialHelpers;
 import grith.jgrith.myProxy.MyProxy_light;
 import grith.jgrith.plainProxy.LocalProxy;
@@ -12,17 +14,24 @@ import grith.jgrith.voms.VOManagement.VOManagement;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 import org.apache.log4j.Logger;
 import org.bestgrid.goji.CredentialException;
+import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.Goji;
 import org.bestgrid.goji.commands.Activate;
 import org.bestgrid.goji.commands.EndpointAdd;
 import org.bestgrid.goji.commands.EndpointList;
 import org.bestgrid.goji.commands.EndpointRemove;
-import org.bestgrid.goji.exceptions.UserInitException;
+import org.bestgrid.goji.commands.LsCommand;
+import org.bestgrid.goji.commands.TransferCommand;
+import org.bestgrid.goji.exceptions.FileSystemException;
+import org.bestgrid.goji.exceptions.UserException;
 import org.bestgrid.goji.model.Credential;
 import org.bestgrid.goji.model.Endpoint;
 import org.bestgrid.goji.utils.EndpointHelpers;
@@ -45,6 +54,7 @@ public class User {
 	private GojiTransferAPIClient client = null;
 
 	private final String go_username;
+	private final String endpoint_username;
 
 	private GSSCredential currentProxy = null;
 	private final Map<String, Credential> proxies = Maps.newConcurrentMap();
@@ -55,25 +65,9 @@ public class User {
 
 	private final Set<Directory> directories = Sets.newTreeSet();
 	private final Map<FileSystem, Set<String>> filesystems = Maps.newTreeMap();
-	/**
-	 * Default constructor for a User.
-	 * 
-	 * In order to use this constructor, a valid local proxy needs to exist,
-	 * otherwise a UserInitException will be thrown.
-	 * 
-	 * @param go_username
-	 *            the GlobusOnline username
-	 * @throws UserInitException
-	 */
-	public User(String go_username) throws UserInitException {
-		this.go_username = go_username;
 
-		if (LocalProxy.validGridProxyExists()) {
-			init(null);
-		} else {
-			throw new UserInitException(
-					"No valid proxy credential found. Can't init user.");
-		}
+	public User(String go_username) throws UserException {
+		this(go_username, go_username);
 	}
 
 	/**
@@ -89,8 +83,7 @@ public class User {
 	 *            the x509 password
 	 */
 	public User(String go_username, char[] cred_password) {
-		this.go_username = go_username;
-		init_x509(cred_password);
+		this(go_username, go_username, cred_password);
 	}
 
 	/**
@@ -100,61 +93,148 @@ public class User {
 	 *            the GlobusOnline username
 	 * @param proxy
 	 *            a (valid) proxy
-	 * @throws UserInitException
+	 * @throws UserException
 	 */
 	public User(String go_username, GSSCredential proxy)
-			throws UserInitException {
+			throws UserException {
+		this(go_username, go_username, proxy);
+	}
+
+	/**
+	 * Default constructor for a User.
+	 * 
+	 * In order to use this constructor, a valid local proxy needs to exist,
+	 * otherwise a UserInitException will be thrown.
+	 * 
+	 * @param go_username
+	 *            the GlobusOnline username
+	 * @throws UserException
+	 */
+	public User(String go_username, String endpoint_username)
+			throws UserException {
 		this.go_username = go_username;
-		init(proxy);
+		this.endpoint_username = endpoint_username;
+
+		if (LocalProxy.validGridProxyExists()) {
+			init(null);
+		} else {
+			throw new UserException(
+					"No valid proxy credential found. Can't init user.");
+		}
+	}
+
+	public User(String go_username, String endpoint_username, char[] cred_password) {
+		this.go_username = go_username;
+		this.endpoint_username = endpoint_username;
+		init_x509(cred_password);
 	}
 
 	public User(String go_username, String myproxy_username,
 			char[] myproxy_password, String myproxy_host, int myproxy_port)
-					throws UserInitException {
+					throws UserException {
+		this(go_username, go_username, myproxy_username, myproxy_password,
+				myproxy_host, myproxy_port);
+	}
+
+	public User(String go_username, String endpoint_username, GSSCredential proxy)
+			throws UserException {
 		this.go_username = go_username;
+		this.endpoint_username = endpoint_username;
+		init(proxy);
+	}
+
+	public User(String go_username, String endpoint_username, String myproxy_username,
+			char[] myproxy_password, String myproxy_host, int myproxy_port)
+					throws UserException {
+		this.go_username = go_username;
+		this.endpoint_username = endpoint_username;
 		init_myproxy(myproxy_username, myproxy_password, myproxy_host,
 				myproxy_port);
 	}
 
-	public void activateAllEndpoints() {
+	public boolean activateAllEndpoints() {
 
-		Map<String, Endpoint> allEndpoints = getEndpoints();
-
+		Map<String, Endpoint> allEndpoints = getEndpoints(false);
+		boolean success = true;
 		for (Directory d : directories) {
-			try {
-				activateEndpoint(d);
-			} catch (CredentialException e) {
-				e.printStackTrace();
+			boolean s = activateEndpoint(d, false);
+			if (!s) {
+				success = false;
 			}
+		}
+
+		return success;
+
+	}
+
+	/**
+	 * Activates the endpoint that is responsible for the specified directory.
+	 * 
+	 * @param dir
+	 *            the directory
+	 * @param force
+	 *            whether to force (re-)activation even if the endpoint in
+	 *            question is already activated
+	 * @return whether activation worked
+	 */
+	public boolean activateEndpoint(Directory dir, boolean force) {
+
+		Endpoint ep = getEndpoint(getEndpointName(dir));
+
+		if (ep.isActivated() && !force) {
+			return true;
+		}
+
+		try {
+			String epName = getEndpointName(dir);
+
+
+			myLogger.debug("Activating endpoint: " + epName);
+
+			Credential cred = getCredential(dir.getFqan());
+			cred.uploadMyProxy();
+
+			Activate a = new Activate(client, epName, cred, 12);
+			return true;
+		} catch (Exception e) {
+			myLogger.debug(e);
+			return false;
 		}
 
 	}
 
-	public void activateEndpoint(Directory dir) throws CredentialException {
+	public boolean activateEndpoint(String epname_or_url, boolean force)
+			throws FileSystemException {
 
-		String epName = EndpointHelpers.translateIntoEndpointName(dir.getFilesystem().getHost(), dir.getFqan());
+		Directory d = getDirectory(epname_or_url);
 
-		myLogger.debug("Activating endpoint: " + epName);
-
-		Credential cred = getCredential(dir.getFqan());
-		cred.uploadMyProxy();
-
-		Activate a = new Activate(client, epName, cred, 12);
+		if (d != null) {
+			boolean success = activateEndpoint(d, force);
+			return success;
+		} else {
+			return false;
+		}
 
 	}
 
-	public void addEndpoint(Directory d) {
+	public void addEndpoint(Directory d) throws UserException {
 		addEndpoint(d.getFilesystem().getHost(), d.getFqan());
 	}
 
-	public void addEndpoint(String host, String fqan) {
+	public void addEndpoint(String host, String fqan) throws UserException {
 		String endpointAlias = EndpointHelpers.translateIntoEndpointName(host,
 				fqan);
 
 		addEndpoint(host, fqan, endpointAlias);
 	}
 
-	public void addEndpoint(String host, String fqan, String epName) {
+	public void addEndpoint(String host, String fqan, String epName)
+			throws UserException {
+
+		if (!endpoint_username.equals(go_username)) {
+			throw new UserException(
+					"Can't create endpoints because endpoint-username is different.");
+		}
 
 		myLogger.debug("Adding endpoint for: " + epName);
 
@@ -165,9 +245,60 @@ public class User {
 		endpointList = null;
 	}
 
-	public void createAllEndpoints() {
+	public String cp(List<String> sources, String targetDir)
+			throws CredentialException, FileSystemException {
 
-		Map<String, Endpoint> allEndpoints = getEndpoints();
+		targetDir = FileAndUrlHelpers.ensureTrailingSlash(targetDir);
+		targetDir = ensureGlobusUrl(targetDir);
+		List<String> targets = new LinkedList<String>();
+
+		List<String> sourcesNew = new LinkedList<String>();
+
+		for (String s : sources) {
+
+			s = ensureGlobusUrl(s);
+			sourcesNew.add(s);
+
+			Directory sourceDir = getDirectory(s);
+			activateEndpoint(sourceDir, false);
+
+			String filename = FileAndUrlHelpers.getFilename(s);
+			targets.add(targetDir + filename);
+		}
+
+		Directory target = getDirectory(targetDir);
+		activateEndpoint(target, false);
+
+		TransferCommand tc = new TransferCommand(client, sourcesNew, targets);
+
+		return tc.getOutput(GO_PARAM.TASK_ID);
+
+	}
+
+	public String cp(String source, String target) throws CredentialException,
+	FileSystemException {
+
+		Directory sourceDir = getDirectory(source);
+		Directory targetDir = getDirectory(target);
+
+		activateEndpoint(sourceDir, false);
+		activateEndpoint(targetDir, false);
+
+		TransferCommand tc = new TransferCommand(client,
+				ensureGlobusUrl(source), ensureGlobusUrl(target));
+
+		return tc.getOutput(GO_PARAM.TASK_ID);
+
+	}
+
+	public void createAllEndpoints() throws UserException {
+
+		if (!endpoint_username.equals(go_username)) {
+			throw new UserException(
+					"Can't create endpoints because endpoint-username is different.");
+		}
+
+		Map<String, Endpoint> allEndpoints = getEndpoints(true);
 
 		for (FileSystem fs : filesystems.keySet()) {
 
@@ -184,15 +315,51 @@ public class User {
 		}
 	}
 
+	public String ensureGlobusUrl(String url) throws FileSystemException {
+
+		Directory d = getDirectory(url);
+		if (d == null) {
+			throw new FileSystemException(
+					"File can't be mapped to one of the existing filesystems: "
+							+ url);
+		}
+		return endpoint_username + "#" + d.getAlias() + d.getPath()
+				+ d.getRelativePath(url);
+	}
+
+	public String ensureGsiftpUrl(String url) throws FileSystemException {
+
+		Directory d = getDirectory(url);
+		return d.getUrl() + d.getRelativePath(url);
+	}
+
+	// public Directory findDirectory(String url) {
+	//
+	// for (Directory d : directories) {
+	//
+	// String rootUrl = d.getUrl();
+	// if ( url.startsWith(rootUrl)) {
+	// return d;
+	// }
+	// }
+	// return null;
+	// }
+
+	public Map<String, Endpoint> getAllEndpoints() {
+		return getAllEndpoints(false);
+	}
+
 	/**
 	 * Returns a list of all public endpoints as well as the users' private
 	 * endpoints.
 	 * 
+	 * @param force_refresh
+	 *            whether to force refresh the list of endpoints
 	 * @return all endpoints
 	 */
-	public Map<String, Endpoint> getAllEndpoints() {
+	public Map<String, Endpoint> getAllEndpoints(boolean force_refresh) {
 
-		if (endpointList == null) {
+		if (force_refresh || (endpointList == null)) {
 			endpointList = new EndpointList(client);
 		}
 
@@ -202,7 +369,6 @@ public class User {
 	public GojiTransferAPIClient getClient() {
 		return client;
 	}
-
 
 	public Credential getCredential(String fqan) throws CredentialException {
 
@@ -228,17 +394,80 @@ public class User {
 	}
 
 	/**
+	 * Returns the directory that can be accessed with the specified endpoint or
+	 * url.
+	 * 
+	 * Note, this only works for endpoints that are auto-created by Goji, since
+	 * otherwise we can't figure out which VO to use to access the filesystem.
+	 * 
+	 * @param endpointName_or_url
+	 *            the endpoint or a url
+	 * @return the directory or null if no directory can be found
+	 * @throws FileSystemException
+	 */
+	public Directory getDirectory(String endpointName_or_url)
+			throws FileSystemException {
+
+		for (Directory d : getDirectories() ) {
+
+			if ( endpointName_or_url.startsWith("gsiftp") ) {
+				String url = d.getUrl();
+				if (endpointName_or_url.startsWith(url)) {
+					return d;
+				}
+			} else {
+				String fqan = d.getFqan();
+				String host = d.getFilesystem().getHost();
+
+				String name = EndpointHelpers.translateIntoEndpointName(host, fqan);
+
+				if (endpointName_or_url.startsWith(name)
+						|| endpointName_or_url
+						.startsWith(endpoint_username+"#"+name)) {
+					return d;
+				}
+			}
+		}
+
+		throw new FileSystemException(
+				"Url can't be mapped to any of the existing filesystems: "
+						+ endpointName_or_url);
+	}
+
+	private Endpoint getEndpoint(String endpointName) {
+
+		return getAllEndpoints(false).get(endpointName);
+
+	}
+
+	public String getEndpointName(Directory dir) {
+		if (dir == null) {
+			throw new IllegalArgumentException(
+					"Directory parameter can not be null");
+		}
+		String epName = EndpointHelpers.translateIntoEndpointName(dir.getFilesystem().getHost(), dir.getFqan());
+		return epName;
+	}
+
+	public Map<String, Endpoint> getEndpoints() {
+		return getEndpoints(false);
+	}
+
+	/**
 	 * Returns a map of all endpoints that the user has access to (calculated
 	 * using info provider).
 	 * 
 	 * Key is endpoint name, value endpoint class.
 	 * 
+	 * @param force_refresh
+	 *            whether to force refresh the list of endpoints and their
+	 *            details
 	 * @return a map of all of the users' endpoints
 	 */
-	public Map<String, Endpoint> getEndpoints() {
+	public Map<String, Endpoint> getEndpoints(boolean force_refresh) {
 
 		Map<String, Endpoint> result = Maps.newTreeMap();
-		Map<String, Endpoint> allendpoints = getAllEndpoints();
+		Map<String, Endpoint> allendpoints = getAllEndpoints(force_refresh);
 		for ( String ep : allendpoints.keySet()) {
 			if (allendpoints.get(ep).getUsername().equals(go_username)) {
 				result.put(ep, allendpoints.get(ep));
@@ -266,6 +495,16 @@ public class User {
 		return this.fqans.keySet();
 	}
 
+	public String getGlobusOnlineUrl(String url) throws FileSystemException {
+
+		Directory d = getDirectory(url);
+		String root = d.getFilesystem().getUrl();
+		String path = url.substring(root.length());
+
+		return getEndpointName(d) + "/" + path;
+
+	}
+
 	public void getProxy(String fqan) {
 
 
@@ -278,21 +517,21 @@ public class User {
 	 * @param proxy
 	 *            a (valid) proxy
 	 */
-	public void init(GSSCredential cred) throws UserInitException {
+	public void init(GSSCredential cred) throws UserException {
 
 		// save proxy file
 		File proxyFile = new File(CoGProperties.getDefault().getProxyFile());
 
 		if (cred == null) {
 			if (!LocalProxy.validGridProxyExists()) {
-				throw new UserInitException(
+				throw new UserException(
 						"No credential provided and no local proxy exists.");
 			} else {
 				try {
 					cred = CredentialHelpers.wrapGlobusCredential(CredentialHelpers
 							.loadGlobusCredential(new File(LocalProxy.PROXY_FILE)));
 				} catch (Exception e) {
-					throw new UserInitException(
+					throw new UserException(
 							"No credential provided and could not read existing local proxy.");
 				}
 			}
@@ -301,7 +540,7 @@ public class User {
 		try {
 			CredentialHelpers.writeToDisk(cred, proxyFile);
 		} catch (Exception e1) {
-			throw new UserInitException(e1);
+			throw new UserException(e1);
 		}
 
 		// init GO-REST-client
@@ -337,7 +576,7 @@ public class User {
 	}
 
 	private void init_myproxy(String username, char[] password,
-			String myproxyHost, int myproxyPort) throws UserInitException {
+			String myproxyHost, int myproxyPort) throws UserException {
 
 		try {
 			GSSCredential cred = MyProxy_light.getDelegation(myproxyHost,
@@ -345,7 +584,7 @@ public class User {
 					Credential.DEFAULT_PROXY_LIFETIME_IN_HOURS * 3600);
 			init(cred);
 		} catch (MyProxyException e) {
-			throw new UserInitException(e);
+			throw new UserException(e);
 		}
 
 	}
@@ -384,20 +623,45 @@ public class User {
 
 	}
 
-	public void removeAllEndpoints() {
+	public SortedSet<GFile> ls(String url) throws FileSystemException {
 
-		Map<String, Endpoint> endpoints = getEndpoints();
+		url = ensureGlobusUrl(url);
+
+		String epPart = EndpointHelpers.extractEndpointPart(url);
+		String path = EndpointHelpers.extractPathPart(url);
+
+		activateEndpoint(url, false);
+
+		LsCommand lsC = new LsCommand(client, epPart, path);
+
+		return lsC.getFiles();
+
+	}
+
+	public void removeAllEndpoints() throws UserException {
+
+		if (!endpoint_username.equals(go_username)) {
+			throw new UserException(
+					"Can't create endpoints because endpoint-username is different.");
+		}
+
+		Map<String, Endpoint> endpoints = getEndpoints(true);
 		for (String ep : endpoints.keySet()) {
 			removeEndpoint(ep);
 		}
 
 	}
 
-	public void removeEndpoint(Directory d) {
+	public void removeEndpoint(Directory d) throws UserException {
 		removeEndpoint(d.getFilesystem().getHost(), d.getFqan());
 	}
 
-	public void removeEndpoint(String alias) {
+	public void removeEndpoint(String alias) throws UserException {
+
+		if (!endpoint_username.equals(go_username)) {
+			throw new UserException(
+					"Can't create endpoints because endpoint-username is different.");
+		}
 
 		myLogger.debug("Removing endpoint: " + alias);
 		EndpointRemove er = new EndpointRemove(client, alias);
@@ -405,7 +669,7 @@ public class User {
 		endpointList = null;
 	}
 
-	public void removeEndpoint(String host, String fqan) {
+	public void removeEndpoint(String host, String fqan) throws UserException {
 		String endpointAlias = EndpointHelpers.translateIntoEndpointName(host,
 				fqan);
 		removeEndpoint(endpointAlias);

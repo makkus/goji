@@ -6,7 +6,7 @@ import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.commands.TaskInfoCommand;
 import org.bestgrid.goji.commands.TransferCommand;
 import org.bestgrid.goji.control.User;
-import org.bestgrid.goji.exceptions.UserInitException;
+import org.bestgrid.goji.exceptions.UserException;
 import org.bestgrid.goji.model.Endpoint;
 
 
@@ -14,7 +14,7 @@ public class GojiTest {
 
 	/**
 	 * @param args
-	 * @throws UserInitException
+	 * @throws UserException
 	 */
 	public static void main(String[] args) throws Exception {
 
