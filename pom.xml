@@ -73,11 +73,6 @@
 	</dependency>
   	<dependency>
   		<groupId>au.org.arcs.infosystems</groupId>
-  		<artifactId>simplinfo</artifactId>
-  		<version>0.8.9-SNAPSHOT</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>au.org.arcs.infosystems</groupId>
   		<artifactId>mysql-mds</artifactId>
   		<version>0.8.9-SNAPSHOT</version>
   	</dependency>
@@ -87,14 +82,19 @@
   		<version>0.8.9-SNAPSHOT</version>
   	</dependency>
   	<dependency>
-  		<groupId>grisu</groupId>
-  		<artifactId>grid-jcommons</artifactId>
-  		<version>1.4-SNAPSHOT</version>
-  	</dependency>
-  	<dependency>
   		<groupId>com.google.inject</groupId>
   		<artifactId>guice</artifactId>
   		<version>3.0</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>grisu.info</groupId>
+  		<artifactId>ynfo</artifactId>
+  		<version>0.9-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>grisu</groupId>
+  		<artifactId>grid-jcommons</artifactId>
+  		<version>1.5-SNAPSHOT</version>
   	</dependency>
 	</dependencies>
 </project>

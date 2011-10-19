@@ -1,5 +1,6 @@
 package org.bestgrid.goji;
 
+import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 
@@ -8,7 +9,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 
 import org.bestgrid.goji.commands.EndpointList;
-import org.bestgrid.simplinfo.model.InfoManagerImpl;
+import org.bestgrid.goji.commands.EndpointRemove;
+import org.bestgrid.goji.model.Endpoint;
 import org.globusonline.GojiTransferAPIClient;
 
 public class Goji {
@@ -20,7 +22,8 @@ public class Goji {
 	public static void main(String[] args) throws KeyManagementException,
 	NoSuchAlgorithmException, Exception {
 
-		InfoManager im = new InfoManagerImpl();
+		InfoManager im = new YnfoManager(
+				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
 
 		String go_username = "nz";
 
@@ -39,7 +42,7 @@ public class Goji {
 		// }
 		//
 		// Thread.sleep(5000);
-		//
+
 		// EndpointAdd epA = new EndpointAdd(client, "ng2.vpac.org",
 		// "myproxy.arcs.org.au", null, false, true,
 		// "canterbury_ac_nz--nz_nesi");
@@ -50,19 +53,19 @@ public class Goji {
 
 		System.out.println("Endpoints: " + epL.getEndpoints().size());
 
-		// for (Endpoint e : epL.getEndpoints().values()) {
-		//
-		// if (e.username.equals(go_username)) {
-		// try {
-		// System.out.println("Removing: " + e.name);
-		// EndpointRemove epR = new EndpointRemove(client, e.name);
-		// System.out.println(epR.toString());
-		// } catch (Exception ex) {
-		// System.err.println(ex.getLocalizedMessage());
-		// }
-		// }
-		//
-		// }
+		for (Endpoint e : epL.getEndpoints().values()) {
+
+			if (e.getUsername().equals(go_username)) {
+				try {
+					System.out.println("Removing: " + e.getName());
+					EndpointRemove epR = new EndpointRemove(client, e.getName());
+					System.out.println(epR.toString());
+				} catch (Exception ex) {
+					System.err.println(ex.getLocalizedMessage());
+				}
+			}
+
+		}
 
 		String[] fqans = new String[] { "/nz/nesi", "/nz/test" };
 

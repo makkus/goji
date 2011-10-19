@@ -1,5 +1,6 @@
 package org.bestgrid.goji.control;
 
+import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
@@ -39,7 +40,6 @@ import org.globus.common.CoGProperties;
 import org.globus.myproxy.MyProxyException;
 import org.globusonline.GojiTransferAPIClient;
 import org.ietf.jgss.GSSCredential;
-import org.vpac.grisu.control.info.SqlInfoManager;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -49,7 +49,8 @@ public class User {
 	static final Logger myLogger = Logger.getLogger(User.class.getName());
 
 	// private static InfoManager im = new InfoManagerImpl();
-	private static InfoManager im = new SqlInfoManager();
+	private static InfoManager im = new YnfoManager(
+			"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
 
 	private GojiTransferAPIClient client = null;
 
@@ -64,6 +65,7 @@ public class User {
 	private EndpointList endpointList = null;
 
 	private final Set<Directory> directories = Sets.newTreeSet();
+
 	private final Map<FileSystem, Set<String>> filesystems = Maps.newTreeMap();
 
 	public User(String go_username) throws UserException {
@@ -186,7 +188,7 @@ public class User {
 		}
 
 		try {
-			String epName = getEndpointName(dir);
+			String epName = ep.getUsername() + "#" + ep.getName();
 
 
 			myLogger.debug("Activating endpoint: " + epName);
@@ -300,9 +302,9 @@ public class User {
 
 		Map<String, Endpoint> allEndpoints = getEndpoints(true);
 
-		for (FileSystem fs : filesystems.keySet()) {
+		for (FileSystem fs : getFileSystems().keySet()) {
 
-			for (String fqan : filesystems.get(fs)) {
+			for (String fqan : getFileSystems().get(fs)) {
 				String endpointName = EndpointHelpers
 						.translateIntoEndpointName(fs.getHost(), fqan);
 				if (!allEndpoints.containsKey(endpointName)) {
@@ -560,15 +562,15 @@ public class User {
 
 		// calculate all the directories a user has access to
 		directories.clear();
-		filesystems.clear();
+		getFileSystems().clear();
 		for (String fqan : fqans.keySet()) {
 			directories.addAll(im.getDirectoriesForVO(fqan));
 		}
 		for (Directory dir : directories) {
-			Set<String> fqans = filesystems.get(dir.getFilesystem());
+			Set<String> fqans = getFileSystems().get(dir.getFilesystem());
 			if (fqans == null) {
 				fqans = Sets.newTreeSet();
-				filesystems.put(dir.getFilesystem(), fqans);
+				getFileSystems().put(dir.getFilesystem(), fqans);
 			}
 			fqans.add(dir.getFqan());
 		}

@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
+import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globusonline.GojiTransferAPIClient;
 
 public class ActivationRequirements extends AbstractCommand {
@@ -20,7 +21,8 @@ public class ActivationRequirements extends AbstractCommand {
 	@Override
 	public String getPath() {
 		try {
-			return "/endpoint/" + getConfig(GO_PARAM.ENDPOINT_NAME)
+			return "/endpoint/"
+					+ EndpointHelpers.encode(getConfig(GO_PARAM.ENDPOINT_NAME))
 					+ "/activation_requirements";
 		} catch (CommandConfigException e) {
 			// should not happen

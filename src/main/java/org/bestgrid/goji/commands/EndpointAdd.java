@@ -78,12 +78,16 @@ public class EndpointAdd extends AbstractCommand {
 			JSONArray dataArr = new JSONArray();
 			JSONObject dataObj = new JSONObject();
 			String host = "";
-			String port = "2811";
+			int port = 2811;
 			String[] pieces = getConfig(GO_PARAM.GRIDFTP_SERVER).split(":");
 			if (pieces != null) {
 				host = pieces[0];
 				if (pieces.length > 1) {
-					port = pieces[1];
+					try {
+						port = Integer.parseInt(pieces[1]);
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
 				}
 			}
 
@@ -101,7 +105,7 @@ public class EndpointAdd extends AbstractCommand {
 			jobj.put("public", Boolean.parseBoolean(getConfig(GO_PARAM.IS_PUBLIC)));
 
 			String jsonData = jobj.toString();
-			System.out.println("SENDING POST: " + jsonData);
+			myLogger.debug("SENDING POST: " + jsonData);
 			putJsonData(jsonData);
 		} catch (JSONException e) {
 			throw new InitException(e);
