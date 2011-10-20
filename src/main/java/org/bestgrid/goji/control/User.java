@@ -1,6 +1,5 @@
 package org.bestgrid.goji.control;
 
-import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
@@ -21,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
-import org.apache.log4j.Logger;
 import org.bestgrid.goji.CredentialException;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.Goji;
@@ -41,17 +39,19 @@ import org.globus.myproxy.MyProxyException;
 import org.globusonline.transfer.BCTransferAPIClient;
 import org.globusonline.transfer.JSONTransferAPIClient;
 import org.ietf.jgss.GSSCredential;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class User {
 
-	static final Logger myLogger = Logger.getLogger(User.class.getName());
+	static final Logger myLogger = LoggerFactory
+			.getLogger(User.class.getName());
 
 	// private static InfoManager im = new InfoManagerImpl();
-	private static InfoManager im = new YnfoManager(
-			"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+	private final InfoManager im;
 
 	private BCTransferAPIClient client = null;
 
@@ -69,10 +69,6 @@ public class User {
 
 	private final Map<FileSystem, Set<String>> filesystems = Maps.newTreeMap();
 
-	public User(String go_username) throws UserException {
-		this(go_username, go_username);
-	}
-
 	/**
 	 * Convenience constructor to create a user and init it using the password
 	 * of a x509 certificate in the default location.
@@ -85,9 +81,10 @@ public class User {
 	 * @param cred_password
 	 *            the x509 password
 	 */
-	public User(String go_username, char[] cred_password) {
-		this(go_username, go_username, cred_password);
+	public User(String go_username, char[] cred_password, InfoManager im) {
+		this(go_username, go_username, cred_password, im);
 	}
+
 
 	/**
 	 * Constructor to create and init a user in one go using provided proxy.
@@ -98,9 +95,35 @@ public class User {
 	 *            a (valid) proxy
 	 * @throws UserException
 	 */
-	public User(String go_username, GSSCredential proxy)
+	public User(String go_username, GSSCredential proxy, InfoManager im)
 			throws UserException {
-		this(go_username, go_username, proxy);
+		this(go_username, go_username, proxy, im);
+	}
+
+	public User(String go_username, InfoManager im) throws UserException {
+		this(go_username, go_username, im);
+	}
+
+	public User(String go_username, String endpoint_username, char[] cred_password, InfoManager im) {
+		this.go_username = go_username;
+		this.endpoint_username = endpoint_username;
+		this.im = im;
+		init_x509(cred_password);
+	}
+
+	public User(String go_username, String myproxy_username,
+			char[] myproxy_password, String myproxy_host, int myproxy_port, InfoManager im)
+					throws UserException {
+		this(go_username, go_username, myproxy_username, myproxy_password,
+				myproxy_host, myproxy_port, im);
+	}
+
+	public User(String go_username, String endpoint_username, GSSCredential proxy, InfoManager im)
+			throws UserException {
+		this.go_username = go_username;
+		this.endpoint_username = endpoint_username;
+		this.im = im;
+		init(proxy);
 	}
 
 	/**
@@ -113,11 +136,11 @@ public class User {
 	 *            the GlobusOnline username
 	 * @throws UserException
 	 */
-	public User(String go_username, String endpoint_username)
+	public User(String go_username, String endpoint_username, InfoManager im)
 			throws UserException {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
-
+		this.im = im;
 		if (LocalProxy.validGridProxyExists()) {
 			init(null);
 		} else {
@@ -126,31 +149,13 @@ public class User {
 		}
 	}
 
-	public User(String go_username, String endpoint_username, char[] cred_password) {
-		this.go_username = go_username;
-		this.endpoint_username = endpoint_username;
-		init_x509(cred_password);
-	}
-
-	public User(String go_username, String myproxy_username,
-			char[] myproxy_password, String myproxy_host, int myproxy_port)
-					throws UserException {
-		this(go_username, go_username, myproxy_username, myproxy_password,
-				myproxy_host, myproxy_port);
-	}
-
-	public User(String go_username, String endpoint_username, GSSCredential proxy)
-			throws UserException {
-		this.go_username = go_username;
-		this.endpoint_username = endpoint_username;
-		init(proxy);
-	}
-
 	public User(String go_username, String endpoint_username, String myproxy_username,
-			char[] myproxy_password, String myproxy_host, int myproxy_port)
+			char[] myproxy_password,
+			String myproxy_host, int myproxy_port, InfoManager im)
 					throws UserException {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
+		this.im = im;
 		init_myproxy(myproxy_username, myproxy_password, myproxy_host,
 				myproxy_port);
 	}
@@ -201,7 +206,7 @@ public class User {
 			Activate a = new Activate(client, epName, cred, 12);
 			return true;
 		} catch (Exception e) {
-			myLogger.debug(e);
+			myLogger.debug("Could not activate endpoint.", e);
 			return false;
 		}
 

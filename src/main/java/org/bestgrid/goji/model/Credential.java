@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.bestgrid.goji.CredentialException;
 import org.globus.gsi.GlobusCredentialException;
 import org.globus.myproxy.DestroyParams;
@@ -19,12 +18,15 @@ import org.globus.myproxy.MyProxy;
 import org.globus.myproxy.MyProxyException;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.Ostermiller.util.RandPass;
 
 public class Credential {
 
-	static final Logger myLogger = Logger.getLogger(Credential.class.getName());
+	static final Logger myLogger = LoggerFactory.getLogger(Credential.class
+			.getName());
 
 	public final static String DEFAULT_MYPROXY_SERVER = "myproxy.arcs.org.au";
 	public final static int DEFAULT_MYPROXY_PORT = 7512;

@@ -1,5 +1,8 @@
 package org.bestgrid.goji;
 
+import grisu.info.ynfo.YnfoManager;
+import grisu.jcommons.interfaces.InfoManager;
+
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
@@ -21,10 +24,13 @@ public class ActivateTest {
 
 		User user = null;
 
+		InfoManager im = new YnfoManager(
+				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+
 		if ((args.length > 0) && StringUtils.isNotBlank(args[0])) {
-			user = new User("nz", args[0].toCharArray());
+			user = new User("nz", args[0].toCharArray(), im);
 		} else {
-			user = new User("nz");
+			user = new User("nz", im);
 		}
 
 		// user.removeAllEndpoints();

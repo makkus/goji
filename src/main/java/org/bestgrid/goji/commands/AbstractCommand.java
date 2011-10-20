@@ -12,7 +12,6 @@ import java.util.TreeMap;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
@@ -21,6 +20,8 @@ import org.globusonline.transfer.APIError;
 import org.globusonline.transfer.BCTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -90,8 +91,8 @@ public abstract class AbstractCommand {
 
 	private int responseCode = -1;
 
-	static final Logger myLogger = Logger.getLogger(AbstractCommand.class
-			.getName());
+	static final Logger myLogger = LoggerFactory
+			.getLogger(AbstractCommand.class);
 
 	private static JSONArray getResult(HttpsURLConnection c)
 			throws IOException, GeneralSecurityException {
@@ -144,12 +145,15 @@ public abstract class AbstractCommand {
 		this.config = config;
 		myLogger.debug("Initializing GO command: " + name);
 		init();
-		myLogger.debug("Executing GO command: " + name);
+		myLogger.debug("Executing GO command: " + name + " using path: "
+				+ getPath());
 		try {
 			HttpsURLConnection c = client.request(this.getMethodType()
 					.toString(), this.getPath(), getJsonData(), null);
+			myLogger.debug("Executed GO command: " + name);
 			JSONArray result = getResult(c);
 			int res = c.getResponseCode();
+			myLogger.debug("Response code for GO command " + name + ": " + res);
 			setResult(result, res);
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
@@ -168,7 +172,7 @@ public abstract class AbstractCommand {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		myLogger.debug("Executed GO command: " + name);
+
 	}
 
 	/**
