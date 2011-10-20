@@ -96,5 +96,10 @@
   		<artifactId>grid-jcommons</artifactId>
   		<version>1.5-SNAPSHOT</version>
   	</dependency>
+  	<dependency>
+  		<groupId>org.globusonline</groupId>
+  		<artifactId>transfer-api-client-java</artifactId>
+  		<version>0.10-SNAPSHOT</version>
+  	</dependency>
 	</dependencies>
 </project>

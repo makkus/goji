@@ -1,7 +1,15 @@
 package org.bestgrid.goji.commands;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.TreeMap;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -9,7 +17,8 @@ import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.bestgrid.goji.model.Endpoint;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.APIError;
+import org.globusonline.transfer.BCTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -71,7 +80,7 @@ public abstract class AbstractCommand {
 
 	public static final String NO_VALUE = "no_value";
 
-	protected final GojiTransferAPIClient client;
+	protected final BCTransferAPIClient client;
 
 	protected JSONArray result = null;
 
@@ -84,25 +93,49 @@ public abstract class AbstractCommand {
 	static final Logger myLogger = Logger.getLogger(AbstractCommand.class
 			.getName());
 
-	public AbstractCommand(GojiTransferAPIClient client) {
+	private static JSONArray getResult(HttpsURLConnection c)
+			throws IOException, GeneralSecurityException {
+		JSONArray jArr = null;
+		InputStream inputStream = c.getInputStream();
+		InputStreamReader reader = new InputStreamReader(inputStream);
+		BufferedReader in = new BufferedReader(reader);
+
+		String inputLine = null;
+		StringBuffer strbuf = new StringBuffer("[");
+
+		while ((inputLine = in.readLine()) != null) {
+			strbuf.append(inputLine);
+		}
+		strbuf.append("]");
+		in.close();
+
+		try {
+			jArr = new JSONArray(strbuf.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return jArr;
+	}
+
+	public AbstractCommand(BCTransferAPIClient client) {
 		this(client, null);
 	}
 
-	public AbstractCommand(GojiTransferAPIClient client, GO_PARAM configInput,
+	public AbstractCommand(BCTransferAPIClient client, GO_PARAM configInput,
 			String configValue) {
 		this(client,
 				new ImmutableMap.Builder<GO_PARAM, String>().put(configInput,
 						configValue).build());
 	}
 
-	public AbstractCommand(GojiTransferAPIClient client,
+	public AbstractCommand(BCTransferAPIClient client,
 			GO_PARAM inputKey1, String input1, GO_PARAM inputKey2, String input2) {
 		this(client,
 				new ImmutableMap.Builder<GO_PARAM, String>().put(inputKey1,
 						input1).put(inputKey2, input2).build());
 	}
 
-	public AbstractCommand(GojiTransferAPIClient client,
+	public AbstractCommand(BCTransferAPIClient client,
 			Map<GO_PARAM, String> config) {
 
 		String name = this.getClass().getSimpleName();
@@ -112,7 +145,29 @@ public abstract class AbstractCommand {
 		myLogger.debug("Initializing GO command: " + name);
 		init();
 		myLogger.debug("Executing GO command: " + name);
-		client.request(this);
+		try {
+			HttpsURLConnection c = client.request(this.getMethodType()
+					.toString(), this.getPath(), getJsonData(), null);
+			JSONArray result = getResult(c);
+			int res = c.getResponseCode();
+			setResult(result, res);
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		} catch (GeneralSecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		} catch (APIError e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
 		myLogger.debug("Executed GO command: " + name);
 	}
 

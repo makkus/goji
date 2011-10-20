@@ -9,8 +9,8 @@ import java.util.TimeZone;
 import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.InitException;
-import org.globusonline.GojiTransferAPIClient;
 import org.globusonline.JGOConstants;
+import org.globusonline.transfer.BCTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,7 +22,7 @@ public class TransferCommand extends AbstractCommand {
 	private String submissionId = null;
 	private JSONArray dataPairArr = null;
 
-	public TransferCommand(GojiTransferAPIClient client,
+	public TransferCommand(BCTransferAPIClient client,
 			List<String> sourcePaths, List<String> targetPaths) {
 		super(client, new ImmutableMap.Builder<GO_PARAM, String>()
 				.put(GO_PARAM.SOURCE_PATH, StringUtils.join(sourcePaths, ";"))
@@ -30,12 +30,12 @@ public class TransferCommand extends AbstractCommand {
 				.build());
 	}
 
-	public TransferCommand(GojiTransferAPIClient client,
+	public TransferCommand(BCTransferAPIClient client,
 			Map<GO_PARAM, String> config) {
 		super(client, config);
 	}
 
-	public TransferCommand(GojiTransferAPIClient client, String sourcePath,
+	public TransferCommand(BCTransferAPIClient client, String sourcePath,
 			String targetPath) {
 		super(client, new ImmutableMap.Builder<GO_PARAM, String>()
 				.put(GO_PARAM.SOURCE_PATH, sourcePath)

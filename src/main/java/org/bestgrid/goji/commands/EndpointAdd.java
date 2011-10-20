@@ -5,7 +5,7 @@ import java.util.Map;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,13 +15,13 @@ import com.google.common.collect.ImmutableMap;
 public class EndpointAdd extends AbstractCommand {
 
 
-	public EndpointAdd(GojiTransferAPIClient client, Map<GO_PARAM, String> config) {
+	public EndpointAdd(BCTransferAPIClient client, Map<GO_PARAM, String> config) {
 
 		super(client, config);
 
 	}
 
-	public EndpointAdd(GojiTransferAPIClient client, String gridFTPServer,
+	public EndpointAdd(BCTransferAPIClient client, String gridFTPServer,
 			String myProxyServer, String serverDN, boolean isGlobusConnect,
 			boolean isPublic, String endpointName) {
 		super(client, new ImmutableMap.Builder<GO_PARAM, String>()

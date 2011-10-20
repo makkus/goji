@@ -3,12 +3,12 @@ package org.bestgrid.goji.commands;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
 
 public class EndpointRemove extends AbstractCommand {
 
 
-	public EndpointRemove(GojiTransferAPIClient client, String endpointName) {
+	public EndpointRemove(BCTransferAPIClient client, String endpointName) {
 		super(client, GO_PARAM.ENDPOINT_NAME, endpointName);
 	}
 

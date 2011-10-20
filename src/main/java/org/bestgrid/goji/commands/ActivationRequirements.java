@@ -5,11 +5,11 @@ import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.bestgrid.goji.utils.EndpointHelpers;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
 
 public class ActivationRequirements extends AbstractCommand {
 
-	public ActivationRequirements(GojiTransferAPIClient client, String endpoint) {
+	public ActivationRequirements(BCTransferAPIClient client, String endpoint) {
 		super(client, GO_PARAM.ENDPOINT_NAME, endpoint);
 	}
 

@@ -38,7 +38,8 @@ import org.bestgrid.goji.model.Endpoint;
 import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globus.common.CoGProperties;
 import org.globus.myproxy.MyProxyException;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
+import org.globusonline.transfer.JSONTransferAPIClient;
 import org.ietf.jgss.GSSCredential;
 
 import com.google.common.collect.Maps;
@@ -52,7 +53,7 @@ public class User {
 	private static InfoManager im = new YnfoManager(
 			"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
 
-	private GojiTransferAPIClient client = null;
+	private BCTransferAPIClient client = null;
 
 	private final String go_username;
 	private final String endpoint_username;
@@ -189,6 +190,7 @@ public class User {
 
 		try {
 			String epName = ep.getUsername() + "#" + ep.getName();
+			// String epName = ep.getName();
 
 
 			myLogger.debug("Activating endpoint: " + epName);
@@ -368,7 +370,7 @@ public class User {
 		return endpointList.getEndpoints();
 	}
 
-	public GojiTransferAPIClient getClient() {
+	public BCTransferAPIClient getClient() {
 		return client;
 	}
 
@@ -549,10 +551,19 @@ public class User {
 		currentProxy = cred;
 
 		try {
-			client = new GojiTransferAPIClient(go_username,
-					Goji.DEFAULT_BASE_URL, LocalProxy.PROXY_FILE,
-					LocalProxy.PROXY_FILE,
-					"/home/markus/.globus/certificates/gd_bundle.crt", false);
+			client = new JSONTransferAPIClient(go_username,
+					"/home/markus/.globus/certificates/gd_bundle.crt",
+					LocalProxy.PROXY_FILE, LocalProxy.PROXY_FILE,
+					Goji.DEFAULT_BASE_URL);
+			// client = new BCTransferAPIClient(go_username,
+			// BaseTransferAPIClient.FORMAT_JSON,
+			// "/home/markus/.globus/certificates/gd_bundle.crt",
+			// LocalProxy.PROXY_FILE,
+			// LocalProxy.PROXY_FILE, Goji.DEFAULT_BASE_URL);
+			// client = new BCTransferAPIClient(go_username,
+			// Goji.DEFAULT_BASE_URL, LocalProxy.PROXY_FILE,
+			// LocalProxy.PROXY_FILE,
+			// "/home/markus/.globus/certificates/gd_bundle.crt", false);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

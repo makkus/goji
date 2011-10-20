@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.bestgrid.goji.model.Endpoint;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -12,7 +12,7 @@ public class EndpointList extends AbstractCommand {
 
 	private Map<String, Endpoint> endpoints;
 
-	public EndpointList(GojiTransferAPIClient client) {
+	public EndpointList(BCTransferAPIClient client) {
 		super(client, null);
 	}
 

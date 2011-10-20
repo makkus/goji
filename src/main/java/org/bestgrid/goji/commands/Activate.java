@@ -6,7 +6,8 @@ import org.bestgrid.goji.exceptions.CommandConfigException;
 import org.bestgrid.goji.exceptions.InitException;
 import org.bestgrid.goji.exceptions.RequestException;
 import org.bestgrid.goji.model.Credential;
-import org.globusonline.GojiTransferAPIClient;
+import org.bestgrid.goji.utils.EndpointHelpers;
+import org.globusonline.transfer.BCTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,7 +16,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class Activate extends AbstractCommand {
 
-	public Activate(GojiTransferAPIClient client, String endpoint,
+	public Activate(BCTransferAPIClient client, String endpoint,
 			Credential cred, Integer lifetime_in_hours) {
 
 		this(client, endpoint, cred.getMyProxyServer(), cred
@@ -24,7 +25,7 @@ public class Activate extends AbstractCommand {
 
 	}
 
-	public Activate(GojiTransferAPIClient client, String endpoint,
+	public Activate(BCTransferAPIClient client, String endpoint,
 			String myproxyServer, String myproxyUsername,
 			char[] myproxyPassword, Integer lifetime_in_hours) {
 
@@ -78,7 +79,7 @@ public class Activate extends AbstractCommand {
 					data.put("value", myProxyPassword);
 				} else if ((data.get("name") != null)
 						&& (data.get("name").equals("lifetime_in_hours"))) {
-					data.put("value", lifetimeInHours);
+					data.put("value", lifetimeInHours.toString());
 				}
 			}
 
@@ -101,7 +102,9 @@ public class Activate extends AbstractCommand {
 	@Override
 	public String getPath() {
 
-		return "/endpoint/" + getConfig(GO_PARAM.ENDPOINT_NAME) + "/activate";
+		return "/endpoint/"
+				+ EndpointHelpers.encode(getConfig(GO_PARAM.ENDPOINT_NAME))
+				+ "/activate";
 
 	}
 

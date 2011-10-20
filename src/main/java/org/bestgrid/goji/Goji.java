@@ -3,6 +3,7 @@ package org.bestgrid.goji;
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
+import grith.jgrith.plainProxy.LocalProxy;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -11,7 +12,8 @@ import java.util.Set;
 import org.bestgrid.goji.commands.EndpointList;
 import org.bestgrid.goji.commands.EndpointRemove;
 import org.bestgrid.goji.model.Endpoint;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
+import org.globusonline.transfer.BaseTransferAPIClient;
 
 public class Goji {
 
@@ -28,10 +30,12 @@ public class Goji {
 		String go_username = "nz";
 
 
-		GojiTransferAPIClient client = new GojiTransferAPIClient(go_username,
-				DEFAULT_BASE_URL, "/tmp/x509up_u1000",
-				"/tmp/x509up_u1000",
-				"/home/markus/.globus/certificates/gd_bundle.crt", false);
+		BCTransferAPIClient client = new BCTransferAPIClient(go_username,
+				BaseTransferAPIClient.FORMAT_JSON, LocalProxy.PROXY_FILE,
+				LocalProxy.PROXY_FILE, Goji.DEFAULT_BASE_URL);
+		// DEFAULT_BASE_URL, "/tmp/x509up_u1000",
+		// "/tmp/x509up_u1000",
+		// "/home/markus/.globus/certificates/gd_bundle.crt", false);
 
 		// try {
 		// EndpointRemove epR = new EndpointRemove(client, "autotest1");

@@ -2,11 +2,11 @@ package org.bestgrid.goji.commands;
 
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.InitException;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
 
 public class SubmissionIdCommand extends AbstractCommand {
 
-	public SubmissionIdCommand(GojiTransferAPIClient client) {
+	public SubmissionIdCommand(BCTransferAPIClient client) {
 		super(client);
 	}
 

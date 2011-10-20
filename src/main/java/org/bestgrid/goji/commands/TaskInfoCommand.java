@@ -3,13 +3,13 @@ package org.bestgrid.goji.commands;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.InitException;
 import org.bestgrid.goji.model.TaskInfo;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
 
 public class TaskInfoCommand extends AbstractCommand {
 
 	private TaskInfo taskResult;
 
-	public TaskInfoCommand(GojiTransferAPIClient client, String taskId) {
+	public TaskInfoCommand(BCTransferAPIClient client, String taskId) {
 		super(client, GO_PARAM.TASK_ID, taskId);
 	}
 

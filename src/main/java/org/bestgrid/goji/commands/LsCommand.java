@@ -8,7 +8,7 @@ import java.util.SortedSet;
 import org.bestgrid.goji.GO_PARAM;
 import org.bestgrid.goji.exceptions.InitException;
 import org.bestgrid.goji.utils.EndpointHelpers;
-import org.globusonline.GojiTransferAPIClient;
+import org.globusonline.transfer.BCTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -18,11 +18,11 @@ public class LsCommand extends AbstractCommand {
 
 	private SortedSet<GFile> files;
 
-	public LsCommand(GojiTransferAPIClient client, Map<GO_PARAM, String> params) {
+	public LsCommand(BCTransferAPIClient client, Map<GO_PARAM, String> params) {
 		super(client, params);
 	}
 
-	public LsCommand(GojiTransferAPIClient client, String endpoint, String path) {
+	public LsCommand(BCTransferAPIClient client, String endpoint, String path) {
 		super(client, GO_PARAM.ENDPOINT_NAME, endpoint, GO_PARAM.PATH, path);
 	}
 
