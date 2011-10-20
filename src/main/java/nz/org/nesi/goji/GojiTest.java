@@ -1,13 +1,13 @@
-package nz.org.nesi;
+package nz.org.nesi.goji;
 
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 
 import java.util.Map;
 
-import nz.org.goji.model.Endpoint;
 import nz.org.nesi.goji.control.User;
 import nz.org.nesi.goji.exceptions.UserException;
+import nz.org.nesi.goji.model.Endpoint;
 
 import org.apache.commons.lang.StringUtils;
 

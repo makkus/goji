@@ -1,4 +1,4 @@
-package nz.org.goji.model;
+package nz.org.nesi.goji.model;
 
 import grith.jgrith.CredentialHelpers;
 import grith.jgrith.myProxy.MyProxy_light;
@@ -9,7 +9,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.UUID;
 
-import nz.org.nesi.CredentialException;
+import nz.org.nesi.goji.CredentialException;
 
 import org.apache.commons.lang.StringUtils;
 import org.globus.gsi.GlobusCredentialException;

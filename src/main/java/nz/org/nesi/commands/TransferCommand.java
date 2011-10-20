@@ -6,11 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import nz.org.nesi.GO_PARAM;
+import nz.org.nesi.goji.GO_PARAM;
 import nz.org.nesi.goji.exceptions.InitException;
 
 import org.apache.commons.lang.StringUtils;
-import org.globusonline.JGOConstants;
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,6 +18,8 @@ import org.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 
 public class TransferCommand extends AbstractCommand {
+
+	public static final int JGO_TRANSFER_SUCCESS = 202;
 
 	private String submissionId = null;
 	private JSONArray dataPairArr = null;
@@ -168,7 +169,7 @@ public class TransferCommand extends AbstractCommand {
 		String message = "Initiating Globus.org Transfer\n";
 		String taskId = null;
 
-		if (getResponseCode() == JGOConstants.JGO_TRANSFER_SUCCESS) {
+		if (getResponseCode() == JGO_TRANSFER_SUCCESS) {
 
 			message += extractFromResults("message");
 			taskId = extractFromResults("task_id");

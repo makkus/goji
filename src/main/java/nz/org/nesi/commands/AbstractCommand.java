@@ -11,11 +11,11 @@ import java.util.TreeMap;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import nz.org.goji.model.Endpoint;
-import nz.org.nesi.GO_PARAM;
+import nz.org.nesi.goji.GO_PARAM;
 import nz.org.nesi.goji.exceptions.CommandConfigException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;
+import nz.org.nesi.goji.model.Endpoint;
 
 import org.apache.commons.lang.StringUtils;
 import org.globusonline.transfer.APIError;

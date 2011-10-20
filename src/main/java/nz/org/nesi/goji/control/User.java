@@ -20,19 +20,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
-import nz.org.goji.model.Credential;
-import nz.org.goji.model.Endpoint;
-import nz.org.nesi.CredentialException;
-import nz.org.nesi.GO_PARAM;
-import nz.org.nesi.Goji;
 import nz.org.nesi.commands.Activate;
 import nz.org.nesi.commands.EndpointAdd;
 import nz.org.nesi.commands.EndpointList;
 import nz.org.nesi.commands.EndpointRemove;
 import nz.org.nesi.commands.LsCommand;
 import nz.org.nesi.commands.TransferCommand;
+import nz.org.nesi.goji.CredentialException;
+import nz.org.nesi.goji.GO_PARAM;
+import nz.org.nesi.goji.Goji;
 import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.exceptions.UserException;
+import nz.org.nesi.goji.model.Credential;
+import nz.org.nesi.goji.model.Endpoint;
 
 import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globus.common.CoGProperties;

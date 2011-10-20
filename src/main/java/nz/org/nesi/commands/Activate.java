@@ -1,10 +1,10 @@
 package nz.org.nesi.commands;
 
-import nz.org.goji.model.Credential;
-import nz.org.nesi.GO_PARAM;
+import nz.org.nesi.goji.GO_PARAM;
 import nz.org.nesi.goji.exceptions.CommandConfigException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;
+import nz.org.nesi.goji.model.Credential;
 
 import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.utils.EndpointHelpers;

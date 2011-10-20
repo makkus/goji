@@ -1,4 +1,4 @@
-package nz.org.nesi;
+package nz.org.nesi.goji;
 
 import grith.jgrith.plainProxy.LocalProxy;
 

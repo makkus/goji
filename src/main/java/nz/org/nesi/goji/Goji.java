@@ -1,4 +1,4 @@
-package nz.org.nesi;
+package nz.org.nesi.goji;
 
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
@@ -9,9 +9,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 
-import nz.org.goji.model.Endpoint;
 import nz.org.nesi.commands.EndpointList;
 import nz.org.nesi.commands.EndpointRemove;
+import nz.org.nesi.goji.model.Endpoint;
 
 import org.globusonline.transfer.BCTransferAPIClient;
 import org.globusonline.transfer.BaseTransferAPIClient;

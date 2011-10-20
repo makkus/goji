@@ -1,4 +1,4 @@
-package nz.org.nesi;
+package nz.org.nesi.goji;
 
 public enum GO_PARAM {
 	ENDPOINT_NAME,

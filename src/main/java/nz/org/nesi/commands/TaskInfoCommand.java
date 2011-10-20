@@ -1,8 +1,8 @@
 package nz.org.nesi.commands;
 
-import nz.org.goji.model.TaskInfo;
-import nz.org.nesi.GO_PARAM;
+import nz.org.nesi.goji.GO_PARAM;
 import nz.org.nesi.goji.exceptions.InitException;
+import nz.org.nesi.goji.model.TaskInfo;
 
 import org.globusonline.transfer.BaseTransferAPIClient;
 

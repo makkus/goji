@@ -3,7 +3,7 @@ package nz.org.nesi.commands;
 import java.util.Map;
 import java.util.TreeMap;
 
-import nz.org.goji.model.Endpoint;
+import nz.org.nesi.goji.model.Endpoint;
 
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;

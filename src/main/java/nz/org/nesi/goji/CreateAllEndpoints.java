@@ -1,4 +1,4 @@
-package nz.org.nesi;
+package nz.org.nesi.goji;
 
 public class CreateAllEndpoints {
 

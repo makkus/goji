@@ -5,7 +5,7 @@ import grisu.jcommons.model.info.GFile;
 import java.util.Map;
 import java.util.SortedSet;
 
-import nz.org.nesi.GO_PARAM;
+import nz.org.nesi.goji.GO_PARAM;
 import nz.org.nesi.goji.exceptions.InitException;
 
 import org.bestgrid.goji.utils.EndpointHelpers;

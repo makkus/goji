@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nz.org.goji.model;
+package nz.org.nesi.goji.model;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
