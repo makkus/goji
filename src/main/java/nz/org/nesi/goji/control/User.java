@@ -20,19 +20,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
-import nz.org.nesi.commands.Activate;
-import nz.org.nesi.commands.EndpointAdd;
-import nz.org.nesi.commands.EndpointList;
-import nz.org.nesi.commands.EndpointRemove;
-import nz.org.nesi.commands.LsCommand;
-import nz.org.nesi.commands.TransferCommand;
-import nz.org.nesi.goji.CredentialException;
-import nz.org.nesi.goji.GO_PARAM;
 import nz.org.nesi.goji.Goji;
+import nz.org.nesi.goji.exceptions.CommandException;
+import nz.org.nesi.goji.exceptions.CredentialException;
 import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.exceptions.UserException;
 import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Endpoint;
+import nz.org.nesi.goji.model.commands.Activate;
+import nz.org.nesi.goji.model.commands.EndpointAdd;
+import nz.org.nesi.goji.model.commands.EndpointList;
+import nz.org.nesi.goji.model.commands.EndpointRemove;
+import nz.org.nesi.goji.model.commands.LsCommand;
+import nz.org.nesi.goji.model.commands.PARAM;
+import nz.org.nesi.goji.model.commands.Transfer;
 
 import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globus.common.CoGProperties;
@@ -248,9 +249,14 @@ public class User {
 
 		myLogger.debug("Adding endpoint for: " + epName);
 
-		EndpointAdd ea = new EndpointAdd(client, host,
-				Credential.DEFAULT_MYPROXY_SERVER,
-				null, false, true, epName);
+		try {
+			EndpointAdd ea = new EndpointAdd(client, host,
+					Credential.DEFAULT_MYPROXY_SERVER, null, false, true,
+					epName);
+		} catch (CommandException e) {
+			myLogger.error("Can't add endpoint.", e);
+			throw new UserException(e);
+		}
 
 		endpointList = null;
 	}
@@ -279,9 +285,14 @@ public class User {
 		Directory target = getDirectory(targetDir);
 		activateEndpoint(target, false);
 
-		TransferCommand tc = new TransferCommand(client, sourcesNew, targets);
+		Transfer tc;
+		try {
+			tc = new Transfer(client, sourcesNew, targets);
+		} catch (CommandException e) {
+			throw new RuntimeException(e);
+		}
 
-		return tc.getOutput(GO_PARAM.TASK_ID);
+		return tc.getOutput(PARAM.TASK_ID);
 
 	}
 
@@ -294,10 +305,15 @@ public class User {
 		activateEndpoint(sourceDir, false);
 		activateEndpoint(targetDir, false);
 
-		TransferCommand tc = new TransferCommand(client,
-				ensureGlobusUrl(source), ensureGlobusUrl(target));
+		Transfer tc;
+		try {
+			tc = new Transfer(client, ensureGlobusUrl(source),
+					ensureGlobusUrl(target));
+		} catch (CommandException e) {
+			throw new RuntimeException(e);
+		}
 
-		return tc.getOutput(GO_PARAM.TASK_ID);
+		return tc.getOutput(PARAM.TASK_ID);
 
 	}
 
@@ -651,7 +667,12 @@ public class User {
 
 		activateEndpoint(url, false);
 
-		LsCommand lsC = new LsCommand(client, epPart, path);
+		LsCommand lsC;
+		try {
+			lsC = new LsCommand(client, epPart, path);
+		} catch (CommandException e) {
+			throw new RuntimeException(e);
+		}
 
 		return lsC.getFiles();
 
@@ -683,7 +704,11 @@ public class User {
 		}
 
 		myLogger.debug("Removing endpoint: " + alias);
-		EndpointRemove er = new EndpointRemove(client, alias);
+		try {
+			EndpointRemove er = new EndpointRemove(client, alias);
+		} catch (CommandException e) {
+			throw new RuntimeException(e);
+		}
 
 		endpointList = null;
 	}

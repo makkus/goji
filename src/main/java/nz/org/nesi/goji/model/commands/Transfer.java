@@ -1,4 +1,4 @@
-package nz.org.nesi.commands;
+package nz.org.nesi.goji.model.commands;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import nz.org.nesi.goji.GO_PARAM;
+import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
 import org.apache.commons.lang.StringUtils;
@@ -17,35 +17,36 @@ import org.json.JSONObject;
 
 import com.google.common.collect.ImmutableMap;
 
-public class TransferCommand extends AbstractCommand {
+public class Transfer extends AbstractCommand {
 
 	public static final int JGO_TRANSFER_SUCCESS = 202;
 
 	private String submissionId = null;
 	private JSONArray dataPairArr = null;
 
-	public TransferCommand(BaseTransferAPIClient client) {
+	public Transfer(BaseTransferAPIClient client) {
 		super(client);
 	}
 
-	public TransferCommand(BaseTransferAPIClient client,
-			List<String> sourcePaths, List<String> targetPaths) {
-		super(client, new ImmutableMap.Builder<GO_PARAM, String>()
-				.put(GO_PARAM.SOURCE_PATH, StringUtils.join(sourcePaths, ";"))
-				.put(GO_PARAM.TARGET_PATH, StringUtils.join(targetPaths, ";"))
+	public Transfer(BaseTransferAPIClient client,
+			List<String> sourcePaths, List<String> targetPaths)
+					throws CommandException {
+		super(client, new ImmutableMap.Builder<PARAM, String>()
+				.put(PARAM.SOURCE_PATH, StringUtils.join(sourcePaths, ";"))
+				.put(PARAM.TARGET_PATH, StringUtils.join(targetPaths, ";"))
 				.build());
 	}
 
-	public TransferCommand(BaseTransferAPIClient client,
-			Map<GO_PARAM, String> config) {
+	public Transfer(BaseTransferAPIClient client,
+			Map<PARAM, String> config) throws CommandException {
 		super(client, config);
 	}
 
-	public TransferCommand(BaseTransferAPIClient client, String sourcePath,
-			String targetPath) {
-		super(client, new ImmutableMap.Builder<GO_PARAM, String>()
-				.put(GO_PARAM.SOURCE_PATH, sourcePath)
-				.put(GO_PARAM.TARGET_PATH, targetPath).build());
+	public Transfer(BaseTransferAPIClient client, String sourcePath,
+			String targetPath) throws CommandException {
+		super(client, new ImmutableMap.Builder<PARAM, String>()
+				.put(PARAM.SOURCE_PATH, sourcePath)
+				.put(PARAM.TARGET_PATH, targetPath).build());
 	}
 
 	private void addSourceDestPathPair(String sourcePath, String destPath)
@@ -75,6 +76,35 @@ public class TransferCommand extends AbstractCommand {
 		data.put("DATA_TYPE", "transfer_item");
 
 		this.dataPairArr.put(data);
+	}
+
+	public void addTransfer(String source, String target) {
+		String currentSource = getConfig(PARAM.SOURCE_PATH);
+		String currentTarget = getConfig(PARAM.TARGET_PATH);
+
+		if ( StringUtils.isBlank(currentSource)) {
+			try {
+				setParameter(PARAM.SOURCE_PATH, source);
+			} catch (CommandException e) {
+			}
+		} else {
+			try {
+				setParameter(PARAM.SOURCE_PATH, currentSource+";"+source);
+			} catch (CommandException e) {
+			}
+		}
+
+		if ( StringUtils.isBlank(currentTarget)) {
+			try {
+				setParameter(PARAM.TARGET_PATH, target);
+			} catch (CommandException e) {
+			}
+		} else {
+			try {
+				setParameter(PARAM.TARGET_PATH, currentTarget+";"+target);
+			} catch (CommandException e) {
+			}
+		}
 	}
 
 	private JSONArray assemblePostArgument() {
@@ -113,8 +143,23 @@ public class TransferCommand extends AbstractCommand {
 	}
 
 	@Override
+	protected PARAM[] getInputParameters() {
+		return new PARAM[] { PARAM.SOURCE_PATH, PARAM.TARGET_PATH };
+	}
+
+	@Override
 	public Method getMethodType() {
 		return Method.POST;
+	}
+
+	@Override
+	protected PARAM[] getOptionalParameters() {
+		return new PARAM[] {};
+	}
+
+	@Override
+	protected PARAM[] getOutputParamets() {
+		return new PARAM[] { PARAM.MESSAGE, PARAM.TASK_ID };
 	}
 
 	@Override
@@ -123,12 +168,12 @@ public class TransferCommand extends AbstractCommand {
 	}
 
 	@Override
-	protected void init() throws InitException {
+	protected void initialize() throws InitException {
 
 		String[] sourcePaths = StringUtils.split(
-				getConfig(GO_PARAM.SOURCE_PATH), ";");
+				getConfig(PARAM.SOURCE_PATH), ";");
 		String[] targetPaths = StringUtils.split(
-				getConfig(GO_PARAM.TARGET_PATH), ";");
+				getConfig(PARAM.TARGET_PATH), ";");
 
 		if (sourcePaths.length != targetPaths.length) {
 			throw new InitException(
@@ -136,8 +181,8 @@ public class TransferCommand extends AbstractCommand {
 		}
 
 		try {
-			SubmissionIdCommand sidc = new SubmissionIdCommand(client);
-			submissionId = sidc.getOutput(GO_PARAM.SUBMISSION_ID);
+			SubmissionId sidc = new SubmissionId(client);
+			submissionId = sidc.getOutput(PARAM.SUBMISSION_ID);
 		} catch (Exception e) {
 			throw new InitException("Can't get submission id.", e);
 		}
@@ -173,13 +218,18 @@ public class TransferCommand extends AbstractCommand {
 
 			message += extractFromResults("message");
 			taskId = extractFromResults("task_id");
-			putOutput(GO_PARAM.MESSAGE, message);
-			putOutput(GO_PARAM.TASK_ID, taskId);
+			putOutput(PARAM.MESSAGE, message);
+			putOutput(PARAM.TASK_ID, taskId);
 		} else {
 			message += "Transfer FAILED (HTTP Error code " + getResponseCode()
 					+ ").  This Transfer cannot be started.";
+			taskId = extractFromResults("task_id");
+			putOutput(PARAM.MESSAGE, message);
+			putOutput(PARAM.TASK_ID, taskId);
+
 		}
 
 	}
+
 
 }

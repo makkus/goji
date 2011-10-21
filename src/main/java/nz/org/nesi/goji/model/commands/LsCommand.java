@@ -1,11 +1,11 @@
-package nz.org.nesi.commands;
+package nz.org.nesi.goji.model.commands;
 
 import grisu.jcommons.model.info.GFile;
 
 import java.util.Map;
 import java.util.SortedSet;
 
-import nz.org.nesi.goji.GO_PARAM;
+import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
 import org.bestgrid.goji.utils.EndpointHelpers;
@@ -24,16 +24,23 @@ public class LsCommand extends AbstractCommand {
 		super(client);
 	}
 
-	public LsCommand(BaseTransferAPIClient client, Map<GO_PARAM, String> params) {
+	public LsCommand(BaseTransferAPIClient client, Map<PARAM, String> params)
+			throws CommandException {
 		super(client, params);
 	}
 
-	public LsCommand(BCTransferAPIClient client, String endpoint, String path) {
-		super(client, GO_PARAM.ENDPOINT_NAME, endpoint, GO_PARAM.PATH, path);
+	public LsCommand(BCTransferAPIClient client, String endpoint, String path)
+			throws CommandException {
+		super(client, PARAM.ENDPOINT_NAME, endpoint, PARAM.PATH, path);
 	}
 
 	public SortedSet<GFile> getFiles() {
 		return files;
+	}
+
+	@Override
+	protected PARAM[] getInputParameters() {
+		return new PARAM[]{PARAM.ENDPOINT_NAME, PARAM.PATH};
 	}
 
 	@Override
@@ -42,15 +49,25 @@ public class LsCommand extends AbstractCommand {
 	}
 
 	@Override
-	public String getPath() {
-		return "/endpoint/"
-				+ EndpointHelpers.encode(getConfig(GO_PARAM.ENDPOINT_NAME))
-				+ "/ls?path="
-				+ getConfig(GO_PARAM.PATH);
+	protected PARAM[] getOptionalParameters() {
+		return new PARAM[]{};
 	}
 
 	@Override
-	protected void init() throws InitException {
+	protected PARAM[] getOutputParamets() {
+		return new PARAM[] { PARAM.ENDPOINT_NAME, PARAM.PATH };
+	}
+
+	@Override
+	public String getPath() {
+		return "/endpoint/"
+				+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
+				+ "/ls?path="
+				+ getConfig(PARAM.PATH);
+	}
+
+	@Override
+	protected void initialize() throws InitException {
 	}
 
 	@Override
@@ -59,9 +76,9 @@ public class LsCommand extends AbstractCommand {
 		try {
 
 			String path = extractFromResults("path");
-			putOutput(GO_PARAM.PATH, path);
+			putOutput(PARAM.PATH, path);
 			String endpoint = extractFromResults("endpoint");
-			putOutput(GO_PARAM.ENDPOINT_NAME, endpoint);
+			putOutput(PARAM.ENDPOINT_NAME, endpoint);
 			String group = extractFromResults("DATA", "group");
 
 			files = Sets.newTreeSet();
@@ -81,6 +98,20 @@ public class LsCommand extends AbstractCommand {
 			e.printStackTrace();
 		}
 
+	}
+
+	public void setEndpoint(String ep) {
+		try {
+			setParameter(PARAM.ENDPOINT_NAME, ep);
+		} catch (CommandException e) {
+		}
+	}
+
+	public void setPath(String path) {
+		try {
+			setParameter(PARAM.PATH, path);
+		} catch (CommandException e) {
+		}
 	}
 
 }

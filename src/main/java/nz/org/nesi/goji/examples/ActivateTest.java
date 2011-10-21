@@ -1,15 +1,17 @@
-package nz.org.nesi.goji;
+package nz.org.nesi.goji.examples;
 
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 
 import java.util.Map;
 
-import nz.org.nesi.goji.commands.Activate;
 import nz.org.nesi.goji.control.User;
+import nz.org.nesi.goji.exceptions.CommandException;
+import nz.org.nesi.goji.exceptions.CredentialException;
 import nz.org.nesi.goji.exceptions.UserException;
 import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Endpoint;
+import nz.org.nesi.goji.model.commands.Activate;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -19,9 +21,10 @@ public class ActivateTest {
 	 * @param args
 	 * @throws UserException
 	 * @throws CredentialException
+	 * @throws CommandException
 	 */
 	public static void main(String[] args) throws UserException,
-	CredentialException {
+			CredentialException, CommandException {
 
 		User user = null;
 

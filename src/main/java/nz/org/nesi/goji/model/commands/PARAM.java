@@ -1,6 +1,6 @@
-package nz.org.nesi.goji;
+package nz.org.nesi.goji.model.commands;
 
-public enum GO_PARAM {
+public enum PARAM {
 	ENDPOINT_NAME,
 	GRIDFTP_SERVER,
 	MYPROXY_HOST,

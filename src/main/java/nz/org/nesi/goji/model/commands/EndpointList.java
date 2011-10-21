@@ -1,8 +1,9 @@
-package nz.org.nesi.commands;
+package nz.org.nesi.goji.model.commands;
 
 import java.util.Map;
 import java.util.TreeMap;
 
+import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.model.Endpoint;
 
 import org.globusonline.transfer.BaseTransferAPIClient;
@@ -15,10 +16,22 @@ public class EndpointList extends AbstractCommand {
 
 	public EndpointList(BaseTransferAPIClient client) {
 		super(client);
+		try {
+			init(null);
+		} catch (CommandException e) {
+			// should be fine
+		}
 	}
+
 
 	public Map<String, Endpoint> getEndpoints() {
 		return endpoints;
+	}
+
+
+	@Override
+	protected PARAM[] getInputParameters() {
+		return new PARAM[] {};
 	}
 
 	@Override
@@ -33,12 +46,22 @@ public class EndpointList extends AbstractCommand {
 	}
 
 	@Override
+	protected PARAM[] getOptionalParameters() {
+		return new PARAM[]{};
+	}
+
+	@Override
+	protected PARAM[] getOutputParamets() {
+		return new PARAM[]{};
+	}
+
+	@Override
 	public String getPath() {
 		return "/endpoint_list?limit=100";
 	}
 
 	@Override
-	public void init() {
+	public void initialize() {
 		// not necessary
 	}
 

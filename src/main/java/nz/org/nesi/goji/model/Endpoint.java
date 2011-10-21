@@ -24,7 +24,7 @@ import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class Endpoint {
+public class Endpoint implements Comparable {
 
 	private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm:ss");
@@ -49,6 +49,22 @@ public class Endpoint {
 	public Endpoint(JSONObject jobj, String username) throws Exception {
 		createFromJSON(jobj, username);
 	}
+
+	public int compareTo(Object arg0) {
+		if ( arg0 instanceof Endpoint ) {
+			Endpoint o = (Endpoint) arg0;
+			int i = getUsername().compareTo(o.getUsername());
+			if (i == 0) {
+				return getName().compareTo(o.getName());
+			} else {
+				return i;
+			}
+		} else {
+			return -1;
+		}
+	}
+
+
 
 	public void createFromJSON(JSONObject jobj, String username)
 			throws Exception {
@@ -131,7 +147,17 @@ public class Endpoint {
 		}
 	}
 
+	@Override
+	public boolean equals(Object o) {
 
+		if ( o instanceof Endpoint ) {
+			Endpoint other = (Endpoint)o;
+			if ( getUsername().equals(((Endpoint) o).getUsername()) && getName().equals(other.getName()) ) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public Date getExpires() {
 		return expires;
@@ -147,6 +173,11 @@ public class Endpoint {
 
 	public String getUsername() {
 		return username;
+	}
+
+	@Override
+	public int hashCode() {
+		return (43 * getName().hashCode()) + (124 * getUsername().hashCode());
 	}
 
 	public boolean isActivated() {

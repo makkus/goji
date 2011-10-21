@@ -1,24 +1,20 @@
-package nz.org.nesi.commands;
+package nz.org.nesi.goji.model.commands;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import nz.org.nesi.goji.GO_PARAM;
-import nz.org.nesi.goji.exceptions.CommandConfigException;
+import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;
 import nz.org.nesi.goji.model.Endpoint;
 
 import org.apache.commons.lang.StringUtils;
-import org.globusonline.transfer.APIError;
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -85,17 +81,19 @@ public abstract class AbstractCommand {
 	public static final String NO_VALUE = "no_value";
 	public static final int NOT_CALLED = Integer.MIN_VALUE;
 
-	public static final String name = AbstractCommand.class.getSimpleName();
+	public final String name;
 
 	protected final BaseTransferAPIClient client;
 
 	protected JSONArray result = null;
 
-	private Map<GO_PARAM, String> config;
-	private Map<GO_PARAM, String> output = null;
+	private Map<PARAM, String> config;
+	private Map<PARAM, String> output = null;
 	private String jsonData = null;
 
 	private int responseCode = NOT_CALLED;
+	private boolean failed = true;
+	private Exception exception = null;
 
 	static final Logger myLogger = LoggerFactory
 			.getLogger(AbstractCommand.class);
@@ -109,39 +107,56 @@ public abstract class AbstractCommand {
 	 */
 	public AbstractCommand(BaseTransferAPIClient client) {
 
+		this.name = this.getClass().getSimpleName();
+		myLogger.debug("Creating GO command: " + name);
+		this.client = client;
+	}
+
+	public AbstractCommand(BaseTransferAPIClient client,
+			Map<PARAM, String> config) throws CommandException {
+
+		this.name = this.getClass().getSimpleName();
 		myLogger.debug("Creating GO command: " + name);
 		this.client = client;
 
+
+		init(config);
+		execute();
 	}
 
-	public AbstractCommand(BaseTransferAPIClient client, GO_PARAM configInput,
-			String configValue) {
+	public AbstractCommand(BaseTransferAPIClient client, PARAM configInput,
+			String configValue) throws CommandException {
 		this(client,
-				new ImmutableMap.Builder<GO_PARAM, String>().put(configInput,
+				new ImmutableMap.Builder<PARAM, String>().put(configInput,
 						configValue).build());
 	}
 
 	public AbstractCommand(BaseTransferAPIClient client,
-			GO_PARAM inputKey1, String input1, GO_PARAM inputKey2, String input2) {
+			PARAM inputKey1,
+			String input1, PARAM inputKey2, String input2)
+					throws CommandException {
 		this(client,
-				new ImmutableMap.Builder<GO_PARAM, String>().put(inputKey1,
+				new ImmutableMap.Builder<PARAM, String>().put(inputKey1,
 						input1).put(inputKey2, input2).build());
 	}
 
-	public AbstractCommand(BaseTransferAPIClient client,
-			Map<GO_PARAM, String> config) {
+	public void execute() throws CommandException {
 
-		myLogger.debug("Creating GO command: " + name);
-		this.client = client;
-
-		setConfig(config);
-		execute();
-	}
-
-	public void execute() {
+		for (PARAM p : getInputParameters()) {
+			String value = config.get(p);
+			if (StringUtils.isBlank(value)) {
+				throw new CommandException("Parameter " + p.toString()
+						+ " not set.");
+			}
+		}
 
 		myLogger.debug("Initializing GO command: " + name);
-		init();
+		try {
+			initialize();
+		} catch (InitException e) {
+			throw new CommandException("Could not initialize command: "
+					+ e.getLocalizedMessage(), e);
+		}
 		myLogger.debug("Executing GO command: " + name + " using path: "
 				+ getPath());
 		try {
@@ -149,25 +164,16 @@ public abstract class AbstractCommand {
 					.toString(), this.getPath(), getJsonData(), null);
 			myLogger.debug("Executed GO command: " + name);
 			setResult(c);
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		} catch (GeneralSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		} catch (APIError e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		} catch (RequestException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			failed = false;
+		} catch (Exception e) {
+			failed = true;
+			exception = e;
+			myLogger.debug(
+					"Can't execute GO command " + name + ": "
+							+ e.getLocalizedMessage(), e);
+			throw new CommandException("Could not execute command: "
+					+ e.getLocalizedMessage(), e);
+
 		}
 
 	}
@@ -239,15 +245,15 @@ public abstract class AbstractCommand {
 	/**
 	 * Returns the value of the given config parameter.
 	 * 
-	 * Throws {@link CommandConfigException} if no such config parameter exists.
+	 * Throws {@link CommandException} if no such config parameter exists.
 	 * 
 	 * @param key
 	 *            the parameter
 	 * @return the value of the config parameter
-	 * @throws CommandConfigException
+	 * @throws CommandException
 	 *             if no such config parameter exists
 	 */
-	public String getConfig(GO_PARAM key) {
+	public String getConfig(PARAM key) {
 		if (config != null) {
 			String result = config.get(key);
 			if (StringUtils.isBlank(result) || NO_VALUE.equals(result)) {
@@ -257,13 +263,20 @@ public abstract class AbstractCommand {
 			}
 
 		} else {
-			throw new CommandConfigException("Config not valid");
+			return null;
 		}
 	}
 
 	/**
+	 * All required input parameters for this command.
+	 * 
+	 * @return input parameters
+	 */
+	protected abstract PARAM[] getInputParameters();
+
+	/**
 	 * Returns the json data that was prepared by the implementing class (in the
-	 * {@link #init()} method} and that is needed for executing the query.
+	 * {@link #initialize()} method} and that is needed for executing the query.
 	 * 
 	 * @return the json data
 	 */
@@ -279,6 +292,12 @@ public abstract class AbstractCommand {
 	abstract public Method getMethodType();
 
 	/**
+	 * The optional input parameters for this command.
+	 * @return optional input parameters
+	 */
+	protected abstract PARAM[] getOptionalParameters();
+
+	/**
 	 * Returns all processed output values.
 	 * 
 	 * Those values are computed from the GO result JSON data in the
@@ -286,7 +305,7 @@ public abstract class AbstractCommand {
 	 * 
 	 * @return all processed output values
 	 */
-	public Map<GO_PARAM, String> getOutput() {
+	public Map<PARAM, String> getOutput() {
 		return output;
 	}
 
@@ -300,9 +319,11 @@ public abstract class AbstractCommand {
 	 *            the key for the output value you want to know
 	 * @return the value of the output value
 	 */
-	public String getOutput(GO_PARAM key) {
+	public String getOutput(PARAM key) {
 		return output.get(key);
 	}
+
+	protected abstract PARAM[] getOutputParamets();
 
 	/**
 	 * Returns the path of the REST query.
@@ -320,6 +341,42 @@ public abstract class AbstractCommand {
 	}
 
 	/**
+	 * This (re-)initializes the command.
+	 * 
+	 * Needs to be called before the command can be executed.
+	 * 
+	 * @param config
+	 *            the config for the command
+	 * @throws CommandException
+	 */
+	public void init(Map<PARAM, String> config) throws CommandException {
+
+		if (config != null) {
+			for (PARAM p : config.keySet()) {
+
+				if ((Arrays.binarySearch(getInputParameters(), p) < 0)
+						&& (Arrays.binarySearch(getOptionalParameters(), p) < 0)) {
+					throw new CommandException("Parameter " + p.toString()
+							+ " not a valid input parameter for " + name
+							+ " command.");
+				}
+
+			}
+		}
+		this.output = null;
+		this.failed = true;
+		this.exception = null;
+
+		this.result = null;
+		this.responseCode = NOT_CALLED;
+		if (config != null) {
+			this.config = config;
+		} else {
+			this.config = Maps.newHashMap();
+		}
+	}
+
+	/**
 	 * Init things you might need to do.
 	 * 
 	 * Maybe also check whether config is valid {@link #getJsonData()}.
@@ -330,8 +387,16 @@ public abstract class AbstractCommand {
 	 * @throws InitException
 	 *             if initialization can't be done
 	 */
-	protected abstract void init() throws InitException;
+	protected abstract void initialize() throws InitException;
 
+	/**
+	 * Process the results.
+	 * 
+	 * Results are stored in the {@link #result} variable. Parse the results in this methods and populate all {@link PARAM} that are specified in the {@link #getOutputParamets()} result
+	 * in the {@link #output} map (using the {@link #putOutput(PARAM, String) method).
+	 * 
+	 * @throws RequestException
+	 */
 	protected abstract void processResult() throws RequestException;
 
 	/**
@@ -339,7 +404,7 @@ public abstract class AbstractCommand {
 	 * as argument to the rest api.
 	 * 
 	 * Might be not necessary though. Should be, if possible, calculated in the
-	 * {@link #init()} method.
+	 * {@link #initialize()} method.
 	 * 
 	 * @param the json data
 	 */
@@ -361,26 +426,34 @@ public abstract class AbstractCommand {
 	 * @param value
 	 *            the value
 	 */
-	protected void putOutput(GO_PARAM key, String value) {
+	protected void putOutput(PARAM key, String value) {
 		if (output == null) {
 			throw new IllegalStateException("Result not set yet.");
 		}
 		this.output.put(key, value);
 	}
 
-	public void setConfig(Map<GO_PARAM, String> config) {
-		output = null;
-		this.result = null;
-		this.responseCode = NOT_CALLED;
-		this.config = config;
-	}
 
-
-	public void setParameter(GO_PARAM param, String value) {
+	/**
+	 * Sets or changes a single input parameter.
+	 * 
+	 * @param param
+	 *            the parameter type
+	 * @param value
+	 *            the value
+	 * @throws CommandException
+	 */
+	public void setParameter(PARAM p, String value) throws CommandException {
 		if ( config == null ) {
-			config = Maps.newHashMap();
+			init(null);
 		}
-		config.put(param, value);
+		if ((Arrays.binarySearch(getInputParameters(), p) < 0)
+				&& (Arrays.binarySearch(getOptionalParameters(), p) < 0)) {
+			throw new CommandException("Parameter " + p.toString()
+					+ " not a valid input parameter for " + name
+					+ " command.");
+		}
+		config.put(p, value);
 	}
 
 	/**
@@ -396,7 +469,7 @@ public abstract class AbstractCommand {
 	 */
 	private void setResult(HttpsURLConnection c) throws RequestException {
 		try {
-			output = new TreeMap<GO_PARAM, String>();
+			output = new TreeMap<PARAM, String>();
 			result = null;
 			this.responseCode = c.getResponseCode();
 			myLogger.debug("Response code for GO command " + responseCode);

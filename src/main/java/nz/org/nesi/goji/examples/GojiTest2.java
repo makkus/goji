@@ -1,4 +1,4 @@
-package nz.org.nesi.goji;
+package nz.org.nesi.goji.examples;
 
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;

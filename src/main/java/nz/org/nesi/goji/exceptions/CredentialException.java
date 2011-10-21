@@ -1,4 +1,4 @@
-package nz.org.nesi.goji;
+package nz.org.nesi.goji.exceptions;
 
 public class CredentialException extends Exception {
 

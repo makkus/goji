@@ -2,6 +2,7 @@ package nz.org.nesi.goji.model;
 
 import grith.jgrith.CredentialHelpers;
 import grith.jgrith.myProxy.MyProxy_light;
+import grith.jgrith.plainProxy.LocalProxy;
 import grith.jgrith.voms.VO;
 import grith.jgrith.vomsProxy.VomsProxy;
 
@@ -9,7 +10,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.UUID;
 
-import nz.org.nesi.goji.CredentialException;
+import nz.org.nesi.goji.exceptions.CredentialException;
 
 import org.apache.commons.lang.StringUtils;
 import org.globus.gsi.GlobusCredentialException;
@@ -104,6 +105,11 @@ public class Credential {
 		this.fqan = null;
 	}
 
+	public Credential createVomsCredential(VO vo, String fqan)
+			throws CredentialException {
+		return new Credential(getCredential(), vo, fqan);
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof Credential) {
@@ -157,6 +163,23 @@ public class Credential {
 
 	public String getFqan() {
 		return this.fqan;
+	}
+
+	public String getLocalPath() {
+
+		if ( localPath == null ) {
+			try {
+				CredentialHelpers.writeToDisk(getCredential(), new File(
+						LocalProxy.PROXY_FILE));
+				localPath = LocalProxy.PROXY_FILE;
+			} catch (Exception e) {
+				myLogger.error(
+						"Could  not write credential: "
+								+ e.getLocalizedMessage(), e);
+				throw new RuntimeException(e);
+			}
+		}
+		return localPath;
 	}
 
 	public char[] getMyProxyPassword() {

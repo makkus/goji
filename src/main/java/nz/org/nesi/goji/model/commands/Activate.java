@@ -1,7 +1,6 @@
-package nz.org.nesi.commands;
+package nz.org.nesi.goji.model.commands;
 
-import nz.org.nesi.goji.GO_PARAM;
-import nz.org.nesi.goji.exceptions.CommandConfigException;
+import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;
 import nz.org.nesi.goji.model.Credential;
@@ -22,7 +21,8 @@ public class Activate extends AbstractCommand {
 	}
 
 	public Activate(BaseTransferAPIClient client, String endpoint,
-			Credential cred, Integer lifetime_in_hours) {
+			Credential cred, Integer lifetime_in_hours)
+					throws CommandException {
 
 		this(client, endpoint, cred.getMyProxyServer(), cred
 				.getMyProxyUsername(), cred.getMyProxyPassword(),
@@ -32,26 +32,26 @@ public class Activate extends AbstractCommand {
 
 	public Activate(BaseTransferAPIClient client, String endpoint,
 			String myproxyServer, String myproxyUsername,
-			char[] myproxyPassword, Integer lifetime_in_hours) {
+			char[] myproxyPassword, Integer lifetime_in_hours)
+					throws CommandException {
 
-		super(client, new ImmutableMap.Builder<GO_PARAM, String>()
-				.put(GO_PARAM.ENDPOINT_NAME, endpoint)
-				.put(GO_PARAM.MYPROXY_HOST, myproxyServer)
-				.put(GO_PARAM.MYPROXY_USERNAME, myproxyUsername)
-				.put(GO_PARAM.MYPROXY_PASSWORD, new String(myproxyPassword))
-				.put(GO_PARAM.PROXY_LIFETIME_IN_HOURS,
+		super(client, new ImmutableMap.Builder<PARAM, String>()
+				.put(PARAM.ENDPOINT_NAME, endpoint)
+				.put(PARAM.MYPROXY_HOST, myproxyServer)
+				.put(PARAM.MYPROXY_USERNAME, myproxyUsername)
+				.put(PARAM.MYPROXY_PASSWORD, new String(myproxyPassword))
+				.put(PARAM.PROXY_LIFETIME_IN_HOURS,
 						lifetime_in_hours.toString())
 						.build());
 	}
 
 	private void activate(JSONArray arResult, String myProxyServer,
-			String myProxyUser,
-			String myProxyPassword) {
+			String myProxyUser, String myProxyPassword) {
 
 		Integer lifetimeInHours = -1;
 		try {
 			lifetimeInHours = Integer
-					.parseInt(getConfig(GO_PARAM.PROXY_LIFETIME_IN_HOURS));
+					.parseInt(getConfig(PARAM.PROXY_LIFETIME_IN_HOURS));
 		} catch (Exception e) {
 			throw new InitException("Can't get lifetime for proxy.", e);
 		}
@@ -96,7 +96,12 @@ public class Activate extends AbstractCommand {
 
 		putJsonData(jsonData);
 
+	}
 
+	@Override
+	protected PARAM[] getInputParameters() {
+		return new PARAM[] { PARAM.ENDPOINT_NAME, PARAM.MYPROXY_HOST,
+				PARAM.MYPROXY_USERNAME, PARAM.MYPROXY_PASSWORD };
 	}
 
 	@Override
@@ -105,23 +110,34 @@ public class Activate extends AbstractCommand {
 	}
 
 	@Override
+	protected PARAM[] getOptionalParameters() {
+		return new PARAM[] { PARAM.PROXY_LIFETIME_IN_HOURS };
+	}
+
+	@Override
+	protected PARAM[] getOutputParamets() {
+		return new PARAM[] { PARAM.MESSAGE, PARAM.SUCCESS, PARAM.SUBJECT,
+				PARAM.EXPIRE_TIME };
+	}
+
+	@Override
 	public String getPath() {
 
 		return "/endpoint/"
-				+ EndpointHelpers.encode(getConfig(GO_PARAM.ENDPOINT_NAME))
+				+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
 				+ "/activate";
 
 	}
 
 	@Override
-	protected void init() throws InitException {
+	protected void initialize() throws InitException {
 
 		// first, we need to get ActivationRequirements
 		ActivationRequirements ar = null;
 		try {
 			ar = new ActivationRequirements(client,
-					getConfig(GO_PARAM.ENDPOINT_NAME));
-		} catch (CommandConfigException e) {
+					getConfig(PARAM.ENDPOINT_NAME));
+		} catch (CommandException e) {
 			throw new InitException(e);
 		}
 
@@ -132,14 +148,12 @@ public class Activate extends AbstractCommand {
 		}
 
 		String myproxyHost = null;
-		try {
-			myproxyHost = getConfig(GO_PARAM.MYPROXY_HOST);
-		} catch (CommandConfigException e) {
-			throw new InitException(e);
-		}
+
+		myproxyHost = getConfig(PARAM.MYPROXY_HOST);
+
 		if (StringUtils.isBlank(myproxyHost)) {
 			// use the default one
-			myproxyHost = ar.getOutput(GO_PARAM.MYPROXY_HOST);
+			myproxyHost = ar.getOutput(PARAM.MYPROXY_HOST);
 		}
 
 		if (StringUtils.isBlank(myproxyHost)) {
@@ -147,13 +161,12 @@ public class Activate extends AbstractCommand {
 					"No myproxy provided and no default myproxy configured for endpoint");
 		}
 
-		String myProxyUsername = getConfig(GO_PARAM.MYPROXY_USERNAME);
-		String myProxyPassString = getConfig(GO_PARAM.MYPROXY_PASSWORD);
+		String myProxyUsername = getConfig(PARAM.MYPROXY_USERNAME);
+		String myProxyPassString = getConfig(PARAM.MYPROXY_PASSWORD);
 
 		JSONArray dataArr = ar.getResult();
 
 		activate(dataArr, myproxyHost, myProxyUsername, myProxyPassString);
-
 
 	}
 
@@ -165,18 +178,65 @@ public class Activate extends AbstractCommand {
 			jobj = result.getJSONObject(0);
 
 			String activationMessage = jobj.getString("message");
-			putOutput(GO_PARAM.MESSAGE, activationMessage);
+			putOutput(PARAM.MESSAGE, activationMessage);
 			Boolean success = false;
 			if (activationMessage.indexOf("activated successfully") != -1) {
 				success = true;
 			}
-			putOutput(GO_PARAM.SUCCESS, success.toString());
+			putOutput(PARAM.SUCCESS, success.toString());
 			String subject = jobj.getString("subject");
-			putOutput(GO_PARAM.SUBJECT, subject);
+			putOutput(PARAM.SUBJECT, subject);
 			String expire_time = jobj.getString("expire_time");
-			putOutput(GO_PARAM.EXPIRE_TIME, expire_time);
+			putOutput(PARAM.EXPIRE_TIME, expire_time);
 		} catch (JSONException e) {
 			throw new RequestException(e);
+		}
+	}
+
+	public void setCredential(Credential c) {
+		setCredential(c, 12);
+	}
+
+	public void setCredential(Credential c, int lifetimeInHours) {
+
+		setMyProxyHost(c.getMyProxyServer());
+		setMyProxyUsername(c.getMyProxyUsername());
+		setMyProxyPassword(c.getMyProxyPassword());
+		setProxyLifetimeInHours(lifetimeInHours);
+	}
+
+	public void setEndpoint(String endpointName) {
+		try {
+			setParameter(PARAM.ENDPOINT_NAME, endpointName);
+		} catch (CommandException e) {
+		}
+	}
+
+	public void setMyProxyHost(String host) {
+		try {
+			setParameter(PARAM.MYPROXY_HOST, host);
+		} catch (CommandException e) {
+		}
+	}
+
+	public void setMyProxyPassword(char[] pw) {
+		try {
+			setParameter(PARAM.MYPROXY_PASSWORD, new String(pw));
+		} catch (CommandException e) {
+		}
+	}
+
+	public void setMyProxyUsername(String username) {
+		try {
+			setParameter(PARAM.MYPROXY_USERNAME, username);
+		} catch (CommandException e) {
+		}
+	}
+
+	public void setProxyLifetimeInHours(Integer hours) {
+		try {
+			setParameter(PARAM.PROXY_LIFETIME_IN_HOURS, hours.toString());
+		} catch (CommandException e) {
 		}
 	}
 
