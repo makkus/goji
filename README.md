@@ -14,7 +14,7 @@ Goji has 2 goals:
 
 1) make the GlobusOnline REST API available via an easy-to-use Java library
 
-2) integrate GlobusOnline with VOMS and mds information
+2) integrate VOMS and an Information sytem provider into this Java Library so that GlobusOnline can be used in conjunction with those technologies
 
 
 
