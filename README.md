@@ -12,7 +12,7 @@ Purpose
 
 Goji has 2 goals:
 
-1) make the GO REST API available via an easy-to-use Java library
+1) make the GlobusOnline REST API available via an easy-to-use Java library
 
 2) integrate GlobusOnline with VOMS and mds information
 
