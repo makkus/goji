@@ -1,4 +1,4 @@
-Goja - Globus Online Java API
+Goji - Globus Online Java API
 ==========================
 
 Goji is based on [JGO](http://confluence.globus.org/display/~neillm/JGOClient+Homepage) written by Neill Miller (University of Chicago). 
