@@ -16,11 +16,13 @@ Goji has 2 goals:
 Building Goji
 -------------
 
-In order to build Grisu from the git sources, you need: 
+In order to build and run Grisu from the git sources, you need: 
 
 - Sun Java Development Kit (version ≥ 6)
 - [git](http://git-scm.com) 
 - [Apache Maven](http://maven.apache.org) (version >=2)
+
+- the [gd_bundle.crt](http://www.mcs.anl.gov/~neillm/esg/gd_bundle.crt) file in $HOME/.globus/certificates
 
 Checkout Goji via github:
 
