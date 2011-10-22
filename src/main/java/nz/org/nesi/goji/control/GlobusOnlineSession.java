@@ -3,6 +3,7 @@ package nz.org.nesi.goji.control;
 import grisu.jcommons.model.info.GFile;
 import grith.jgrith.plainProxy.LocalProxy;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 import java.util.Set;
@@ -72,7 +73,9 @@ public class GlobusOnlineSession {
 		this.credential = cred;
 		try {
 			client = new JSONTransferAPIClient(go_username,
-					"/home/markus/.globus/certificates/gd_bundle.crt",
+					System.getProperty("user.home") + File.separator
+							+ ".globus" + File.separator + "certificates"
+							+ File.separator + "gd_bundle.crt",
 					cred.getLocalPath(), cred.getLocalPath(),
 					Goji.DEFAULT_BASE_URL);
 		} catch (Exception e) {
