@@ -1,8 +1,8 @@
 package nz.org.nesi.goji.examples;
 
+import grisu.jcommons.exceptions.CredentialException;
 import nz.org.nesi.goji.control.GlobusOnlineSession;
 import nz.org.nesi.goji.exceptions.CommandException;
-import nz.org.nesi.goji.exceptions.CredentialException;
 import nz.org.nesi.goji.model.Endpoint;
 
 public class SessionExample {

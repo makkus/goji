@@ -1,5 +1,6 @@
 package nz.org.nesi.goji.control;
 
+import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
@@ -22,7 +23,6 @@ import java.util.SortedSet;
 
 import nz.org.nesi.goji.Goji;
 import nz.org.nesi.goji.exceptions.CommandException;
-import nz.org.nesi.goji.exceptions.CredentialException;
 import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.exceptions.UserException;
 import nz.org.nesi.goji.model.Credential;

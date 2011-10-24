@@ -1,5 +1,6 @@
 package nz.org.nesi.goji.control;
 
+import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.model.info.GFile;
 import grith.jgrith.plainProxy.LocalProxy;
 
@@ -11,7 +12,6 @@ import java.util.SortedSet;
 
 import nz.org.nesi.goji.Goji;
 import nz.org.nesi.goji.exceptions.CommandException;
-import nz.org.nesi.goji.exceptions.CredentialException;
 import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.commands.AbstractCommand;
@@ -42,8 +42,17 @@ public class GlobusOnlineSession {
 
 	private Credential credential = null;
 
+	/**
+	 * This constructor requires you to have a valid local proxy on the default
+	 * globus location (e.g. /tmp/x509u... on linux).
+	 * 
+	 * @param go_username
+	 *            the GlobusOnline username
+	 * @throws CredentialException
+	 *             if no valid local proxy exists
+	 */
 	public GlobusOnlineSession(String go_username) throws CredentialException {
-		this(go_username, LocalProxy.PROXY_FILE, null);
+		this(go_username, LocalProxy.PROXY_FILE);
 	}
 
 	/**
@@ -74,8 +83,8 @@ public class GlobusOnlineSession {
 		try {
 			client = new JSONTransferAPIClient(go_username,
 					System.getProperty("user.home") + File.separator
-							+ ".globus" + File.separator + "certificates"
-							+ File.separator + "gd_bundle.crt",
+					+ ".globus" + File.separator + "certificates"
+					+ File.separator + "gd_bundle.crt",
 					cred.getLocalPath(), cred.getLocalPath(),
 					Goji.DEFAULT_BASE_URL);
 		} catch (Exception e) {
@@ -86,8 +95,19 @@ public class GlobusOnlineSession {
 
 	}
 
-	public GlobusOnlineSession(String go_username, String  pathToCredential, String go_url) throws CredentialException {
-		this(go_username, new Credential(pathToCredential), go_url);
+	/**
+	 * For this constructor you need to provide the path to a valid proxy.
+	 * 
+	 * @param go_username
+	 *            the GlobusOnline username
+	 * @param pathToCredential
+	 *            the path to a local valid proxy certificate
+	 * @throws CredentialException
+	 */
+	public GlobusOnlineSession(String go_username, String pathToCredential)
+			throws CredentialException {
+		this(go_username, new Credential(pathToCredential),
+				Goji.DEFAULT_BASE_URL);
 	}
 
 	/**

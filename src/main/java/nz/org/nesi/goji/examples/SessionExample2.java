@@ -1,5 +1,6 @@
 package nz.org.nesi.goji.examples;
 
+import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.model.info.GFile;
 import grith.jgrith.voms.VO;
 
@@ -7,7 +8,6 @@ import java.util.Set;
 
 import nz.org.nesi.goji.control.GlobusOnlineSession;
 import nz.org.nesi.goji.exceptions.CommandException;
-import nz.org.nesi.goji.exceptions.CredentialException;
 import nz.org.nesi.goji.model.Credential;
 
 public class SessionExample2 {
@@ -51,7 +51,6 @@ public class SessionExample2 {
 		for (GFile f : files) {
 			System.out.println(f.getName());
 		}
-
 
 	}
 }

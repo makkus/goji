@@ -1,19 +1,20 @@
 package nz.org.nesi.goji.model;
 
+import grisu.jcommons.exceptions.CredentialException;
 import grith.jgrith.CredentialHelpers;
 import grith.jgrith.myProxy.MyProxy_light;
 import grith.jgrith.plainProxy.LocalProxy;
+import grith.jgrith.plainProxy.PlainProxy;
 import grith.jgrith.voms.VO;
 import grith.jgrith.vomsProxy.VomsProxy;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 
-import nz.org.nesi.goji.exceptions.CredentialException;
-
 import org.apache.commons.lang.StringUtils;
-import org.globus.gsi.GlobusCredentialException;
+import org.globus.common.CoGProperties;
 import org.globus.myproxy.DestroyParams;
 import org.globus.myproxy.InitParams;
 import org.globus.myproxy.MyProxy;
@@ -44,11 +45,11 @@ public class Credential {
 	private boolean myproxyCredential = false;
 	private boolean uploaded = false;
 
-	private final String myProxyHostOrig = DEFAULT_MYPROXY_SERVER;
-	private final int myProxyPortOrig = DEFAULT_MYPROXY_PORT;
+	private final String myProxyHostOrig;
+	private final int myProxyPortOrig;
 
-	private String myProxyHostNew = myProxyHostOrig;
-	private int myProxyPortNew = myProxyPortOrig;
+	private String myProxyHostNew = null;
+	private int myProxyPortNew = -1;
 
 	private String localPath = null;
 
@@ -56,14 +57,77 @@ public class Credential {
 
 	private final UUID uuid = UUID.randomUUID();
 
+	/**
+	 * Creates a Credential object from an x509 certificate and key pair that
+	 * sits in the default globus location (usually $HOME/.globus/usercert.pem &
+	 * userkey.pem) using the {@link #DEFAULT_PROXY_LIFETIME_IN_HOURS}.
+	 * 
+	 * @param passphrase
+	 *            the certificate passphrase
+	 * @throws CredentialException
+	 *             if the proxy could not be created
+	 */
+	public Credential(char[] passphrase) throws CredentialException {
+		this(CoGProperties.getDefault().getUserCertFile(), CoGProperties.getDefault().getUserKeyFile(), passphrase, DEFAULT_PROXY_LIFETIME_IN_HOURS);
+	}
+
+	/**
+	 * Creates a Credential object from an x509 certificate and key pair that
+	 * sits in the default globus location (usually $HOME/.globus/usercert.pem &
+	 * userkey.pem).
+	 * 
+	 * @param passphrase
+	 *            the certificate passphrase
+	 * @param lifetime_in_hours
+	 *            the lifetime of the proxy in hours
+	 * @throws CredentialException
+	 *             if the proxy could not be created
+	 */
+	public Credential(char[] passphrase, int lifetime_in_hours)
+			throws CredentialException {
+		this(CoGProperties.getDefault().getUserCertFile(), CoGProperties.getDefault().getUserKeyFile(), passphrase, lifetime_in_hours);
+	}
+
+
+	/**
+	 * Creates a Credential object using the provided GSSCredential as base
+	 * credential.
+	 * 
+	 * @param cred
+	 *            a GSSCredential
+	 * 
+	 * @throws CredentialException
+	 *             if the provided credential is not valid
+	 */
 	public Credential(GSSCredential cred) throws CredentialException {
 		this.cred = cred;
 		this.myproxyCredential = false;
 		this.fqan = null;
 
+		this.myProxyHostOrig = DEFAULT_MYPROXY_SERVER;
+		this.myProxyPortOrig = DEFAULT_MYPROXY_PORT;
+
+		this.myProxyHostNew = this.myProxyHostOrig;
+		this.myProxyPortNew = this.myProxyPortOrig;
+
 		getCredential();
 	}
 
+	/**
+	 * Creates a new, VOMS-enabled credential out of the provided base
+	 * credential.
+	 * 
+	 * @param cred
+	 *            the base credential, this would usually have no voms attribute
+	 *            certificate attached
+	 * @param vo
+	 *            the VO the new credential gets its attribute credential from
+	 * @param fqan
+	 *            the fqan (group) of the new credential
+	 * @throws CredentialException
+	 *             if the provided credential is not valid or the voms attribute
+	 *             certificate could not be created
+	 */
 	public Credential(GSSCredential cred, VO vo, String fqan)
 			throws CredentialException {
 
@@ -80,29 +144,94 @@ public class Credential {
 			throw new CredentialException("Can't create voms credential.", e);
 		}
 
+		this.myProxyHostOrig = DEFAULT_MYPROXY_SERVER;
+		this.myProxyPortOrig = DEFAULT_MYPROXY_PORT;
+
+		this.myProxyHostNew = this.myProxyHostOrig;
+		this.myProxyPortNew = this.myProxyPortOrig;
+
 	}
 
+	/**
+	 * Creates a Credential object out of an existing proxy credential.
+	 * 
+	 * This proxy would usually be on the default globus location (e.g.
+	 * /tmp/x509u.... for Linux).
+	 * 
+	 * @param localPath
+	 *            the path to the proxy credential
+	 * @throws CredentialException
+	 *             if the credential at the specified path is not valid
+	 */
 	public Credential(String localPath) throws CredentialException {
-		try {
-			this.cred = CredentialHelpers
-					.loadGssCredential(new File(localPath));
-		} catch (GlobusCredentialException e) {
-			throw new CredentialException("Can't read local proxy.", e);
-		}
-		this.localPath = localPath;
-		this.myproxyCredential = false;
-		this.fqan = null;
+
+		this(CredentialHelpers.loadGssCredential(new File(localPath)));
+
 	}
 
-	public Credential(String myProxyUsername, char[] myProxyPassword)
-			throws CredentialException {
+	/**
+	 * Creates a Credential object from MyProxy login information.
+	 * 
+	 * @param myProxyUsername
+	 *            the MyProxy username
+	 * @param myProxyPassword
+	 *            the MyProxy password
+	 * @param myproxyHost
+	 *            the MyProxy host
+	 * @param myproxyPort
+	 *            the MyProxy port
+	 * @throws CredentialException
+	 *             if no valid proxy could be retrieved from MyProxy
+	 */
+	public Credential(String myProxyUsername, char[] myProxyPassword,
+			String myproxyHost, int myproxyPort)
+					throws CredentialException {
 
 		this.myProxyUsername = myProxyUsername;
 		this.myProxyPassword = myProxyPassword;
 		this.myproxyCredential = true;
+		this.myProxyHostOrig = myproxyHost;
+		this.myProxyPortOrig = myproxyPort;
+
+		this.myProxyHostNew = this.myProxyHostOrig;
+		this.myProxyPortNew = this.myProxyPortOrig;
+
 		getCredential();
 		// TODO: check cred for vo info
 		this.fqan = null;
+	}
+
+	/**
+	 * This one creates a Credential object by creating a proxy out of a local
+	 * X509 certificate & key.
+	 * 
+	 * @param certFile
+	 *            the path to the certificate
+	 * @param keyFile
+	 *            the path to the key
+	 * @param certPassphrase
+	 *            the passphrase for the certificate
+	 * @param lifetime_in_hours
+	 *            the lifetime of the proxy
+	 * @throws IOException
+	 * @throws GSSException
+	 * @throws Exception
+	 */
+	public Credential(String certFile, String keyFile, char[] certPassphrase,
+			int lifetime_in_hours) throws CredentialException {
+
+		this.cred = PlainProxy.init(certFile, keyFile, certPassphrase,
+				lifetime_in_hours);
+
+		this.myproxyCredential = false;
+		this.myProxyHostOrig = DEFAULT_MYPROXY_SERVER;
+		this.myProxyPortOrig = DEFAULT_MYPROXY_PORT;
+
+		this.myProxyHostNew = this.myProxyHostOrig;
+		this.myProxyPortNew = this.myProxyPortOrig;
+
+		this.fqan = null;
+
 	}
 
 	public Credential createVomsCredential(VO vo, String fqan)
@@ -253,6 +382,13 @@ public class Credential {
 
 	public boolean isMyProxyCredential() {
 		return myproxyCredential;
+	}
+
+	public void saveCredential(String localPath) throws CredentialException {
+
+		CredentialHelpers.writeToDisk(getCredential(), new File(localPath));
+
+		this.localPath = localPath;
 	}
 
 	public void uploadMyProxy() throws CredentialException {
