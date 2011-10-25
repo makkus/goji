@@ -33,7 +33,7 @@ import nz.org.nesi.goji.model.commands.EndpointList;
 import nz.org.nesi.goji.model.commands.EndpointRemove;
 import nz.org.nesi.goji.model.commands.LsCommand;
 import nz.org.nesi.goji.model.commands.PARAM;
-import nz.org.nesi.goji.model.commands.Transfer;
+import nz.org.nesi.goji.model.commands.TransferCommand;
 
 import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globus.common.CoGProperties;
@@ -285,9 +285,9 @@ public class User {
 		Directory target = getDirectory(targetDir);
 		activateEndpoint(target, false);
 
-		Transfer tc;
+		TransferCommand tc;
 		try {
-			tc = new Transfer(client, sourcesNew, targets);
+			tc = new TransferCommand(client, sourcesNew, targets);
 		} catch (CommandException e) {
 			throw new RuntimeException(e);
 		}
@@ -305,9 +305,9 @@ public class User {
 		activateEndpoint(sourceDir, false);
 		activateEndpoint(targetDir, false);
 
-		Transfer tc;
+		TransferCommand tc;
 		try {
-			tc = new Transfer(client, ensureGlobusUrl(source),
+			tc = new TransferCommand(client, ensureGlobusUrl(source),
 					ensureGlobusUrl(target));
 		} catch (CommandException e) {
 			throw new RuntimeException(e);

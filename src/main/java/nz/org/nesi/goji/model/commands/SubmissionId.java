@@ -1,5 +1,6 @@
 package nz.org.nesi.goji.model.commands;
 
+import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
 import org.globusonline.transfer.BaseTransferAPIClient;
@@ -8,6 +9,11 @@ public class SubmissionId extends AbstractCommand {
 
 	public SubmissionId(BaseTransferAPIClient client) {
 		super(client);
+		try {
+			init(null);
+		} catch (CommandException e) {
+			// should be fine
+		}
 	}
 
 	@Override

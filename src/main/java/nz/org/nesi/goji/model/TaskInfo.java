@@ -50,11 +50,13 @@ public class TaskInfo
 		this.MBitsPerSec = 0;
 		this.requestTime = jobj.getString("request_time");
 		this.completionTime = jobj.getString("completion_time");
+		if ("null".equals(this.completionTime)) {
+			this.completionTime = null;
+		}
 		this.bytesTransferred = jobj.getLong("bytes_transferred");
 
 		if ((this.requestTime != null) && (!this.requestTime.equals("null"))
-				&& (this.completionTime != null)
-				&& (!this.completionTime.equals("null"))) {
+				&& (this.completionTime != null)) {
 			DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 			Date d1 = df.parse(this.requestTime);
 			Date d2 = df.parse(this.completionTime);

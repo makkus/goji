@@ -5,7 +5,7 @@ import nz.org.nesi.goji.control.GlobusOnlineSession;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.model.Endpoint;
 
-public class SessionExample {
+public class EndpointCommandsExample {
 
 	/**
 	 * @param args
@@ -37,7 +37,7 @@ public class SessionExample {
 		for (Endpoint e : session.getAllUserEndpoints()) {
 			System.out.println("User endpoint: " + e.getName());
 			System.out.println("Expires: " + e.getExpires());
-			session.list(e.getName(), "/~/");
+			session.listDirectory(e.getName(), "/~/");
 
 		}
 

@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import org.apache.commons.lang.StringUtils;
+import org.bestgrid.goji.utils.EndpointHelpers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -155,7 +156,25 @@ public class Endpoint implements Comparable {
 			if ( getUsername().equals(((Endpoint) o).getUsername()) && getName().equals(other.getName()) ) {
 				return true;
 			}
+		} else if (o instanceof String) {
+			String other = (String) o;
+
+			if (other.contains("#")) {
+				String u = EndpointHelpers.extractUsername(other);
+
+				if (!u.equals(getUsername())) {
+					return false;
+				}
+
+			}
+			String epName = EndpointHelpers.extractEndpointName(other);
+			if (!epName.equals(getName())) {
+				return false;
+			} else {
+				return true;
+			}
 		}
+
 		return false;
 	}
 

@@ -551,7 +551,8 @@ public class Credential {
 	 * @throws CredentialException
 	 *             if the MyProxy credential can't be delegated.
 	 */
-	public void uploadMyProxy(String myProxyHostUp, int myProxyPortUp)
+	public synchronized void uploadMyProxy(String myProxyHostUp,
+			int myProxyPortUp)
 			throws CredentialException {
 
 		// TODO: check whether new upload is required?

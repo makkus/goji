@@ -65,60 +65,64 @@ public class Activate extends AbstractCommand {
 	private void activate(JSONArray arResult, String myProxyServer,
 			String myProxyUser, String myProxyPassword) {
 
-		Integer lifetimeInHours = -1;
-		try {
-			lifetimeInHours = Integer
-					.parseInt(getConfig(PARAM.PROXY_LIFETIME_IN_HOURS));
-		} catch (Exception e) {
-			throw new InitException("Can't get lifetime for proxy.", e);
-		}
+		if (StringUtils.isBlank(myProxyServer)) {
+			putJsonData("");
+		} else {
 
-		// String endpoint = getConfig(Input.ENDPOINT_NAME);
-
-		boolean ret = false;
-
-		if (lifetimeInHours == -1) {
-			lifetimeInHours = 12;
-		}
-
-		try {
-
-			JSONObject jobj = arResult.getJSONObject(0);
-			JSONArray dataArr = jobj.getJSONArray("DATA");
-
-			JSONObject data = null;
-			for (int i = 0; i < dataArr.length(); i++) {
-				data = dataArr.getJSONObject(i);
-
-				if ((data.get("name") != null)
-						&& (data.get("name").equals("hostname"))) {
-					data.put("value", myProxyServer);
-				} else if ((data.get("name") != null)
-						&& (data.get("name").equals("username"))) {
-					data.put("value", myProxyUser);
-				} else if ((data.get("name") != null)
-						&& (data.get("name").equals("passphrase"))) {
-					data.put("value", myProxyPassword);
-				} else if ((data.get("name") != null)
-						&& (data.get("name").equals("lifetime_in_hours"))) {
-					data.put("value", lifetimeInHours.toString());
-				}
+			Integer lifetimeInHours = -1;
+			try {
+				lifetimeInHours = Integer
+						.parseInt(getConfig(PARAM.PROXY_LIFETIME_IN_HOURS));
+			} catch (Exception e) {
+				throw new InitException("Can't get lifetime for proxy.", e);
 			}
 
-		} catch (JSONException je) {
-			throw new InitException(je);
-		}
-		String jsonData = arResult.toString();
-		jsonData = jsonData.substring(1, jsonData.length() - 1);
+			// String endpoint = getConfig(Input.ENDPOINT_NAME);
 
-		putJsonData(jsonData);
+			boolean ret = false;
+
+			if (lifetimeInHours == -1) {
+				lifetimeInHours = 12;
+			}
+
+			try {
+
+				JSONObject jobj = arResult.getJSONObject(0);
+				JSONArray dataArr = jobj.getJSONArray("DATA");
+
+				JSONObject data = null;
+				for (int i = 0; i < dataArr.length(); i++) {
+					data = dataArr.getJSONObject(i);
+
+					if ((data.get("name") != null)
+							&& (data.get("name").equals("hostname"))) {
+						data.put("value", myProxyServer);
+					} else if ((data.get("name") != null)
+							&& (data.get("name").equals("username"))) {
+						data.put("value", myProxyUser);
+					} else if ((data.get("name") != null)
+							&& (data.get("name").equals("passphrase"))) {
+						data.put("value", myProxyPassword);
+					} else if ((data.get("name") != null)
+							&& (data.get("name").equals("lifetime_in_hours"))) {
+						data.put("value", lifetimeInHours.toString());
+					}
+				}
+
+			} catch (JSONException je) {
+				throw new InitException(je);
+			}
+			String jsonData = arResult.toString();
+			jsonData = jsonData.substring(1, jsonData.length() - 1);
+
+			putJsonData(jsonData);
+		}
 
 	}
 
 	@Override
 	protected PARAM[] getInputParameters() {
-		return new PARAM[] { PARAM.ENDPOINT_NAME, PARAM.MYPROXY_HOST,
-				PARAM.MYPROXY_USERNAME, PARAM.MYPROXY_PASSWORD };
+		return new PARAM[] { PARAM.ENDPOINT_NAME };
 	}
 
 	@Override
@@ -128,7 +132,8 @@ public class Activate extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getOptionalParameters() {
-		return new PARAM[] { PARAM.PROXY_LIFETIME_IN_HOURS };
+		return new PARAM[] { PARAM.PROXY_LIFETIME_IN_HOURS, PARAM.MYPROXY_HOST,
+				PARAM.MYPROXY_USERNAME, PARAM.MYPROXY_PASSWORD };
 	}
 
 	@Override
@@ -140,9 +145,18 @@ public class Activate extends AbstractCommand {
 	@Override
 	public String getPath() {
 
-		return "/endpoint/"
-				+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
-				+ "/activate";
+		if (StringUtils.isBlank(getConfig(PARAM.MYPROXY_HOST))) {
+
+			return "/endpoint/"
+					+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
+					+ "/autoactivate";
+
+		} else {
+
+			return "/endpoint/"
+					+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
+					+ "/activate";
+		}
 
 	}
 
@@ -168,15 +182,15 @@ public class Activate extends AbstractCommand {
 
 		myproxyHost = getConfig(PARAM.MYPROXY_HOST);
 
-		if (StringUtils.isBlank(myproxyHost)) {
-			// use the default one
-			myproxyHost = ar.getOutput(PARAM.MYPROXY_HOST);
-		}
-
-		if (StringUtils.isBlank(myproxyHost)) {
-			throw new InitException(
-					"No myproxy provided and no default myproxy configured for endpoint");
-		}
+		// if (StringUtils.isBlank(myproxyHost)) {
+		// // use the default one
+		// myproxyHost = ar.getOutput(PARAM.MYPROXY_HOST);
+		// }
+		//
+		// if (StringUtils.isBlank(myproxyHost)) {
+		// throw new InitException(
+		// "No myproxy provided and no default myproxy configured for endpoint");
+		// }
 
 		String myProxyUsername = getConfig(PARAM.MYPROXY_USERNAME);
 		String myProxyPassString = getConfig(PARAM.MYPROXY_PASSWORD);
@@ -216,10 +230,15 @@ public class Activate extends AbstractCommand {
 
 	public void setCredential(Credential c, int lifetimeInHours) {
 
+		if (c == null) {
+			return;
+		}
+
 		setMyProxyHost(c.getMyProxyServer());
 		setMyProxyUsername(c.getMyProxyUsername());
 		setMyProxyPassword(c.getMyProxyPassword());
 		setProxyLifetimeInHours(lifetimeInHours);
+
 	}
 
 	public void setEndpoint(String endpointName) {
@@ -254,6 +273,9 @@ public class Activate extends AbstractCommand {
 		try {
 			setParameter(PARAM.PROXY_LIFETIME_IN_HOURS, hours.toString());
 		} catch (CommandException e) {
+			myLogger.error(
+					"Can't set lifetime in Activate command: "
+							+ e.getLocalizedMessage(), e);
 		}
 	}
 

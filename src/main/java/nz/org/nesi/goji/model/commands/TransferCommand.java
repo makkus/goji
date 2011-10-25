@@ -33,18 +33,18 @@ import org.json.JSONObject;
 
 import com.google.common.collect.ImmutableMap;
 
-public class Transfer extends AbstractCommand {
+public class TransferCommand extends AbstractCommand {
 
 	public static final int JGO_TRANSFER_SUCCESS = 202;
 
 	private String submissionId = null;
 	private JSONArray dataPairArr = null;
 
-	public Transfer(BaseTransferAPIClient client) {
+	public TransferCommand(BaseTransferAPIClient client) {
 		super(client);
 	}
 
-	public Transfer(BaseTransferAPIClient client,
+	public TransferCommand(BaseTransferAPIClient client,
 			List<String> sourcePaths, List<String> targetPaths)
 					throws CommandException {
 		super(client, new ImmutableMap.Builder<PARAM, String>()
@@ -53,12 +53,12 @@ public class Transfer extends AbstractCommand {
 				.build());
 	}
 
-	public Transfer(BaseTransferAPIClient client,
+	public TransferCommand(BaseTransferAPIClient client,
 			Map<PARAM, String> config) throws CommandException {
 		super(client, config);
 	}
 
-	public Transfer(BaseTransferAPIClient client, String sourcePath,
+	public TransferCommand(BaseTransferAPIClient client, String sourcePath,
 			String targetPath) throws CommandException {
 		super(client, new ImmutableMap.Builder<PARAM, String>()
 				.put(PARAM.SOURCE_PATH, sourcePath)
@@ -183,6 +183,10 @@ public class Transfer extends AbstractCommand {
 		return "/transfer";
 	}
 
+	public String getTaskId() {
+		return getOutput(PARAM.TASK_ID);
+	}
+
 	@Override
 	protected void initialize() throws InitException {
 
@@ -198,6 +202,7 @@ public class Transfer extends AbstractCommand {
 
 		try {
 			SubmissionId sidc = new SubmissionId(client);
+			sidc.execute();
 			submissionId = sidc.getOutput(PARAM.SUBMISSION_ID);
 		} catch (Exception e) {
 			throw new InitException("Can't get submission id.", e);

@@ -142,7 +142,10 @@ public abstract class AbstractCommand {
 
 	public void execute() throws CommandException {
 
-		for (PARAM p : getInputParameters()) {
+		PARAM[] i = getInputParameters();
+		Arrays.sort(i);
+
+		for (PARAM p : i) {
 			String value = config.get(p);
 			if (StringUtils.isBlank(value)) {
 				throw new CommandException("Parameter " + p.toString()
@@ -351,11 +354,16 @@ public abstract class AbstractCommand {
 	 */
 	public void init(Map<PARAM, String> config) throws CommandException {
 
+		PARAM[] i = getInputParameters();
+		Arrays.sort(i);
+		PARAM[] o = getOptionalParameters();
+		Arrays.sort(o);
+
 		if (config != null) {
 			for (PARAM p : config.keySet()) {
 
-				if ((Arrays.binarySearch(getInputParameters(), p) < 0)
-						&& (Arrays.binarySearch(getOptionalParameters(), p) < 0)) {
+				if ((Arrays.binarySearch(i, p) < 0)
+						&& (Arrays.binarySearch(o, p) < 0)) {
 					throw new CommandException("Parameter " + p.toString()
 							+ " not a valid input parameter for " + name
 							+ " command.");
@@ -447,8 +455,13 @@ public abstract class AbstractCommand {
 		if ( config == null ) {
 			init(null);
 		}
-		if ((Arrays.binarySearch(getInputParameters(), p) < 0)
-				&& (Arrays.binarySearch(getOptionalParameters(), p) < 0)) {
+
+		PARAM[] i = getInputParameters();
+		Arrays.sort(i);
+		PARAM[] o = getOptionalParameters();
+		Arrays.sort(o);
+
+		if ((Arrays.binarySearch(i, p) < 0) && (Arrays.binarySearch(o, p) < 0)) {
 			throw new CommandException("Parameter " + p.toString()
 					+ " not a valid input parameter for " + name
 					+ " command.");
