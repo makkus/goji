@@ -47,10 +47,10 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-public class User {
+public class UserEnvironment {
 
 	static final Logger myLogger = LoggerFactory
-			.getLogger(User.class.getName());
+			.getLogger(UserEnvironment.class.getName());
 
 	// private static InfoManager im = new InfoManagerImpl();
 	private final InfoManager im;
@@ -83,7 +83,7 @@ public class User {
 	 * @param cred_password
 	 *            the x509 password
 	 */
-	public User(String go_username, char[] cred_password, InfoManager im) {
+	public UserEnvironment(String go_username, char[] cred_password, InfoManager im) {
 		this(go_username, go_username, cred_password, im);
 	}
 
@@ -97,30 +97,30 @@ public class User {
 	 *            a (valid) proxy
 	 * @throws UserException
 	 */
-	public User(String go_username, GSSCredential proxy, InfoManager im)
+	public UserEnvironment(String go_username, GSSCredential proxy, InfoManager im)
 			throws UserException {
 		this(go_username, go_username, proxy, im);
 	}
 
-	public User(String go_username, InfoManager im) throws UserException {
+	public UserEnvironment(String go_username, InfoManager im) throws UserException {
 		this(go_username, go_username, im);
 	}
 
-	public User(String go_username, String endpoint_username, char[] cred_password, InfoManager im) {
+	public UserEnvironment(String go_username, String endpoint_username, char[] cred_password, InfoManager im) {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
 		this.im = im;
 		init_x509(cred_password);
 	}
 
-	public User(String go_username, String myproxy_username,
+	public UserEnvironment(String go_username, String myproxy_username,
 			char[] myproxy_password, String myproxy_host, int myproxy_port, InfoManager im)
 					throws UserException {
 		this(go_username, go_username, myproxy_username, myproxy_password,
 				myproxy_host, myproxy_port, im);
 	}
 
-	public User(String go_username, String endpoint_username, GSSCredential proxy, InfoManager im)
+	public UserEnvironment(String go_username, String endpoint_username, GSSCredential proxy, InfoManager im)
 			throws UserException {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
@@ -138,7 +138,7 @@ public class User {
 	 *            the GlobusOnline username
 	 * @throws UserException
 	 */
-	public User(String go_username, String endpoint_username, InfoManager im)
+	public UserEnvironment(String go_username, String endpoint_username, InfoManager im)
 			throws UserException {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
@@ -151,7 +151,7 @@ public class User {
 		}
 	}
 
-	public User(String go_username, String endpoint_username, String myproxy_username,
+	public UserEnvironment(String go_username, String endpoint_username, String myproxy_username,
 			char[] myproxy_password,
 			String myproxy_host, int myproxy_port, InfoManager im)
 					throws UserException {

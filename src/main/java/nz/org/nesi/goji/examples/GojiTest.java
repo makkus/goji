@@ -5,7 +5,7 @@ import grisu.jcommons.interfaces.InfoManager;
 
 import java.util.Map;
 
-import nz.org.nesi.goji.control.User;
+import nz.org.nesi.goji.control.UserEnvironment;
 import nz.org.nesi.goji.exceptions.UserException;
 import nz.org.nesi.goji.model.Endpoint;
 
@@ -20,15 +20,15 @@ public class GojiTest {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		User user = null;
+		UserEnvironment user = null;
 
 		InfoManager im = new YnfoManager(
 				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
 
 		if (StringUtils.isNotBlank(args[0])) {
-			user = new User("nz", args[0].toCharArray(), im);
+			user = new UserEnvironment("nz", args[0].toCharArray(), im);
 		} else {
-			user = new User("nz", im);
+			user = new UserEnvironment("nz", im);
 		}
 
 		// System.out.println("Groups:\n"

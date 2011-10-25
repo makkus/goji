@@ -42,10 +42,17 @@ If you have a (valid) proxy credential in the default location (e.g. /tmp/x509..
 
     GlobusOnlineSession session = new GlobusOnlineSession(go_user);
     
-(At the moment this is the only convenient way to create such a session, will add more options later on...)
+If you want Goji to create a proxy out of your local x509 certificate (in  $HOME/.globus/usercert.pem), you need to create it first:
+
+	Credential cred = new Credential("yourCertPassword").toCharArray());
+	GlobusOnlineSession session = new GlobusOnlineSession(go_user, cred);
+		
+Or, if you have a proxy credential on a MyProxy server somewhere, you could use that:
+
+    Credential cred = new Credential("myProxyUsername", "myProxyPassword".toCharArray(), "myproxyHost", 7512)
+    GlobusOnlineSession session = new GlobusOnlineSession(go_user, cred);
 
 ### List all GlobusOnline endpoints
-
 
     System.out.println("List of endpoints:");
     for (Endpoint e : session.getAllEndpoints()) {
@@ -65,9 +72,7 @@ If that is not the case, you'll need to...
 	// endpoints since I don't have
 	// any filesystems I can access with a "plain", non-voms proxy.
 	// You might not need it...
-	VO nz = new VO("nz", "voms.bestgrid.org", 15000,
-				"/C=NZ/O=BeSTGRID/OU=The University of Auckland/CN=voms.bestgrid.org");
-	Credential nz_nesi = session.getCredential().createVomsCredential(nz, "/nz/nesi");
+	Credential nz_nesi = session.getCredential().createVomsCredential("/nz/nesi");
 	// making sure that the proxy is accessible for GlobusOnline via MyProxy
 	// internally, Goji creates a random username/password combination for
 	// the proxy. Might change that later on...
@@ -93,7 +98,16 @@ If that is not the case, you'll need to...
 	
 Note: your endpoint needs to be activated for this
 
+### Transfer a file and wait for the transfer to finish
+
+    Transfer t = session.transfer("gram5_ceres_auckland_ac_nz--nz_nesi/~/testfile.result.txt",
+				"go#ep1/~/testfile.result.txt");
+
+	t.waitForTransferToFinish();
+
+Note: both endpoints need to be activated for this
+
 ### More examples
 
-For more examples, please browse: https://github.com/makkus/goji/tree/master/src/main/java/nz/org/nesi/goji/examples
-I'll add them here once I find some time...
+For more examples and fully working code examples, please browse: https://github.com/makkus/goji/tree/master/src/main/java/nz/org/nesi/goji/examples
+I'll add more example code here once I find some time...
