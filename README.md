@@ -63,7 +63,7 @@ Or, if you have a proxy credential on a MyProxy server somewhere, you could use 
 
     session.activateAllUserEndpoints();
     
-Please note, this only works if all your endpoints (the ones which start with <yourGOusername>#...) can be activated with the default session credential.
+Please note, this only works if all your endpoints (the ones which start with [yourGOusername]#...) can be activated with the default session credential.
 If that is not the case, you'll need to...
 
 ### Activate endpoints manually
