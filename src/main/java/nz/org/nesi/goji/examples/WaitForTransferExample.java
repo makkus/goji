@@ -4,7 +4,7 @@ import nz.org.nesi.goji.control.GlobusOnlineSession;
 import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Transfer;
 
-public class WaitForTransfer {
+public class WaitForTransferExample {
 
 	/**
 	 * @param args

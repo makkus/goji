@@ -9,7 +9,7 @@ import nz.org.nesi.goji.control.GlobusOnlineSession;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.model.Credential;
 
-public class LsExampleSimple {
+public class LsExampleGOEndpoint {
 
 	/**
 	 * @param args
