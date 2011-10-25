@@ -42,7 +42,7 @@ If you have a (valid) proxy credential in the default location (e.g. /tmp/x509..
 
     GlobusOnlineSession session = new GlobusOnlineSession(go_user);
     
-If you want Goji to create a proxy out of your local x509 certificate (in  $HOME/.globus/usercert.pem), you need to create it first:
+If you want Goji to use a proxy out of your local x509 certificate (in  $HOME/.globus/usercert.pem), you need to create it first:
 
 	Credential cred = new Credential("yourCertPassword").toCharArray());
 	GlobusOnlineSession session = new GlobusOnlineSession(go_user, cred);
