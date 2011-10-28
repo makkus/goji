@@ -2,12 +2,8 @@ package nz.org.nesi.goji.examples.info;
 
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
-
-import java.util.Map;
-
-import nz.org.nesi.goji.control.UserEnvironment;
+import nz.org.nesi.goji.control.GlobusOnlineUserSession;
 import nz.org.nesi.goji.exceptions.UserException;
-import nz.org.nesi.goji.model.Endpoint;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -20,75 +16,27 @@ public class GojiTest {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		UserEnvironment user = null;
+		GlobusOnlineUserSession session = null;
 
 		InfoManager im = new YnfoManager(
 				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
 
 		if (StringUtils.isNotBlank(args[0])) {
-			user = new UserEnvironment("nz", args[0].toCharArray(), im);
+			session = new GlobusOnlineUserSession("nz", args[0].toCharArray(),
+					im);
 		} else {
-			user = new UserEnvironment("nz", im);
+			session = new GlobusOnlineUserSession("nz", im);
 		}
 
-		// System.out.println("Groups:\n"
-		// + StringUtils.join(user.getFqans(), "\n"));
-		// System.out.println("Directories:\n"
-		// + StringUtils.join(user.getDirectories(), "\n"));
-		// System.out.println("FileSystems:\n"
-		// + StringUtils.join(user.getFileSystems().keySet(), "\n"));
+		System.out.println("All available VOs:");
+		System.out.println(StringUtils.join(session.getFqans(), "\n"));
 
-		// System.out.println("Endpoints:");
-		Map<String, Endpoint> eps = null;
-		// eps = user.getEndpoints();
-		// for (String ep : eps.keySet()) {
-		// System.out.println(ep);
-		// }
-		//
-		// user.removeAllEndpoints();
-		//
-		// System.out.println("Endpoints:");
-		// eps = user.getEndpoints();
-		// for (String ep : eps.keySet()) {
-		// System.out.println(ep);
-		// }
-		//
-		// SubmissionIdCommand sid = new SubmissionIdCommand(user.getClient());
-		//
-		// System.out.println("SID: " + sid.getOutput(GO_PARAM.TRANSFER_ID));
-		//
-		user.createAllEndpoints();
-		// //
-		// System.out.println("Endpoints:");
-		eps = user.getEndpoints();
-		for (String ep : eps.keySet()) {
-			System.out.println(ep);
-		}
-		//
-		user.activateAllEndpoints();
-		//
-		// user.invalidateCredentials();
+		// session.removeAllEndpoints();
+		// session.createAllEndpoints();
 
-		// TransferCommand tc = new TransferCommand(
-		// user.getClient(),
-		// "nz#df_auckland_ac_nz--nz_nesi/~/test.file;nz#df_auckland_ac_nz--nz_nesi/~/testfile.txt",
-		// "nz#gram5_ceres_auckland_ac_nz--nz_uoa/~/test.result3.file;nz#gram5_ceres_auckland_ac_nz--nz_uoa/~/testfile3.result.txt");
-		//
-		// String id = tc.getOutput(GO_PARAM.TASK_ID);
-		//
-		// System.out.println("Task_id: " + id);
-		//
-		// while (true) {
-		// TaskInfoCommand ti = new TaskInfoCommand(user.getClient(), id);
-		//
-		// String status = ti.getTaskInfo().getStatus();
-		// System.out.println(status);
-		// if (!"ACTIVE".equals(status)) {
-		// break;
-		// }
-		//
-		// Thread.sleep(5000);
-		// }
+
+		session.activateAllEndpoints();
+
 
 	}
 

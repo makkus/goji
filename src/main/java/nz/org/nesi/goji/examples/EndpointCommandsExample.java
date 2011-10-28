@@ -31,7 +31,9 @@ public class EndpointCommandsExample {
 		}
 
 		System.out.println("Activating user endpoints...");
-		session.activateAllUserEndpoints();
+		for (Endpoint e : session.getAllUserEndpoints()) {
+			session.activateEndpoint(e.getName(), session.getCredential());
+		}
 		System.out.println("User endpoints activated.");
 
 		for (Endpoint e : session.getAllUserEndpoints()) {

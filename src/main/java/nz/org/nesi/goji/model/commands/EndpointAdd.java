@@ -60,7 +60,7 @@ public class EndpointAdd extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getInputParameters() {
-		return new PARAM[] { PARAM.GRIDFTP_SERVER, PARAM.MYPROXY_HOST,
+		return new PARAM[] { PARAM.GRIDFTP_SERVER,
 				PARAM.ENDPOINT_NAME };
 	}
 
@@ -72,7 +72,7 @@ public class EndpointAdd extends AbstractCommand {
 	@Override
 	protected PARAM[] getOptionalParameters() {
 		return new PARAM[] { PARAM.SERVER_DN, PARAM.IS_GLOBUS_CONNECT,
-				PARAM.IS_PUBLIC };
+				PARAM.IS_PUBLIC, PARAM.MYPROXY_HOST };
 	}
 
 	@Override

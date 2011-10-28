@@ -52,7 +52,6 @@ public class UserEnvironment {
 	static final Logger myLogger = LoggerFactory
 			.getLogger(UserEnvironment.class.getName());
 
-	// private static InfoManager im = new InfoManagerImpl();
 	private final InfoManager im;
 
 	private BCTransferAPIClient client = null;

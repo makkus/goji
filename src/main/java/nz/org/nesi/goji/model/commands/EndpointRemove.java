@@ -85,7 +85,7 @@ public class EndpointRemove extends AbstractCommand {
 
 	public void setEndpoint(String epName) {
 		try {
-			setParameter(PARAM.ENDPOINT_NAME, name);
+			setParameter(PARAM.ENDPOINT_NAME, epName);
 		} catch (CommandException e) {
 		}
 	}

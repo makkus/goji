@@ -18,8 +18,10 @@
     </encoder>
   </appender>
 
+ <logger name="nz.org.nesi" level="debug"/>
+
   <root>
-    <level value="debug" />
+    <level value="warn" />
     <appender-ref ref="FILE" />
 <!--     <appender-ref ref="STDOUT" /> -->
   </root>
