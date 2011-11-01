@@ -57,37 +57,37 @@
 		<developerConnection>scm:git:git@github.com:makkus/goji.git</developerConnection>
 		<url>https://github.com/makkus/goji</url>
 	</scm>
-	
+
 	<dependencies>
-  	<dependency>
-  		<groupId>grith</groupId>
-  		<artifactId>jgrith</artifactId>
-  		<version>0.6.0</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>com.google.inject</groupId>
-  		<artifactId>guice</artifactId>
-  		<version>3.0</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>grisu.info</groupId>
-  		<artifactId>ynfo</artifactId>
-  		<version>0.9.0</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>grisu</groupId>
-  		<artifactId>grid-jcommons</artifactId>
-  		<version>1.5.0</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.globusonline</groupId>
-  		<artifactId>transfer-api-client-java</artifactId>
-  		<version>0.10.6</version>
-  	</dependency>
+		<dependency>
+			<groupId>grith</groupId>
+			<artifactId>jgrith</artifactId>
+			<version>0.6.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>grisu.info</groupId>
+			<artifactId>ynfo</artifactId>
+			<version>0.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>grisu</groupId>
+			<artifactId>grid-jcommons</artifactId>
+			<version>1.5.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.globusonline</groupId>
+			<artifactId>transfer-api-client-java</artifactId>
+			<version>0.10.6</version>
+		</dependency>
 	</dependencies>
-	
+
 	<build>
-	<plugins>
+		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<executions>
@@ -115,6 +115,17 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.1</version>
+				<configuration>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<pushChanges>false</pushChanges>
+					<localCheckout>true</localCheckout>
+				</configuration>
 			</plugin>
 
 		</plugins>
