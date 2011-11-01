@@ -52,7 +52,12 @@
 		</snapshotRepository>
 	</distributionManagement>
 
-
+	<scm>
+		<connection>scm:git:git://github.com/makkus/goji.git</connection>
+		<developerConnection>scm:git:git@github.com:makkus/goji.git</developerConnection>
+		<url>https://github.com/makkus/goji</url>
+	</scm>
+	
 	<dependencies>
   	<dependency>
   		<groupId>grith</groupId>
