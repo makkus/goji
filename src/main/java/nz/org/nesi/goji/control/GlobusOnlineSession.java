@@ -274,8 +274,10 @@ public class GlobusOnlineSession {
 		Activate a = newCommand(Activate.class);
 		a.setEndpoint(ep);
 		a.setCredential(cred);
-		// make sure the proxy is in MyProxy
-		cred.uploadMyProxy();
+		if (cred != null) {
+			// make sure the proxy is in MyProxy
+			cred.uploadMyProxy();
+		}
 		a.execute();
 		// endpoint list needs to be refreshed now
 		invalidateEndpoints();

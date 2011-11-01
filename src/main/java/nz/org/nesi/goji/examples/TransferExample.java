@@ -30,12 +30,12 @@ public class TransferExample {
 		nz_nesi.uploadMyProxy();
 
 		// activate the endpoint with the newly created voms proxy
-		session.activateEndpoint("gram5_ceres_auckland_ac_nz--nz_nesi", nz_nesi);
+		session.activateEndpoint("auckland_gram5--nz_nesi", nz_nesi);
 		// activate the ep1 endpoing
 		session.activateEndpoint("go#ep1", null);
 
 		Transfer t = session.transfer(
-				"gram5_ceres_auckland_ac_nz--nz_nesi/~/testfile.result.txt",
+				"auckland_gram5--nz_nesi/~/testfile.result.txt",
 				"go#ep1/~/testfile.result.txt");
 
 		t.waitForTransferToFinish(2);

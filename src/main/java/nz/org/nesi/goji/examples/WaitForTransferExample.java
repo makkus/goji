@@ -22,6 +22,8 @@ public class WaitForTransferExample {
 				.getTransfer("2a19c5f4-fead-11e0-bc85-1231381a212f");
 
 		t.waitForTransferToFinish();
+
+		System.out.println(t.toString());
 	}
 
 }

@@ -57,15 +57,8 @@
   	<dependency>
   		<groupId>grith</groupId>
   		<artifactId>jgrith</artifactId>
-  		<version>0.6-SNAPSHOT</version>
+  		<version>0.6.0</version>
   	</dependency>
-  	<dependency>
-		<groupId>external.jglobus</groupId>
-		<artifactId>jce-jdk13-131</artifactId>
-		<version>1.8.0</version>
-		<type>jar</type>
-		<scope>compile</scope>
-	</dependency>
   	<dependency>
   		<groupId>com.google.inject</groupId>
   		<artifactId>guice</artifactId>
@@ -74,17 +67,51 @@
   	<dependency>
   		<groupId>grisu.info</groupId>
   		<artifactId>ynfo</artifactId>
-  		<version>0.9-SNAPSHOT</version>
+  		<version>0.9.0</version>
   	</dependency>
   	<dependency>
   		<groupId>grisu</groupId>
   		<artifactId>grid-jcommons</artifactId>
-  		<version>1.5-SNAPSHOT</version>
+  		<version>1.5.0</version>
   	</dependency>
   	<dependency>
   		<groupId>org.globusonline</groupId>
   		<artifactId>transfer-api-client-java</artifactId>
-  		<version>0.10-SNAPSHOT</version>
+  		<version>0.10.6</version>
   	</dependency>
 	</dependencies>
+	
+	<build>
+	<plugins>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<configuration>
+
+							<descriptors>
+								<descriptor>goji.assembly.xml</descriptor>
+							</descriptors>
+							<finalName>goji</finalName>
+							<archive>
+								<index>true</index>
+								<manifest>
+									<mainClass>nz.org.nesi.goji.examples.TransferExample</mainClass>
+								</manifest>
+								<manifestEntries>
+									<Class-Path>bcprov.jar bcprov-jdk15-145.jar</Class-Path>
+								</manifestEntries>
+							</archive>
+
+						</configuration>
+						<goals>
+							<goal>attached</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
 </project>
