@@ -3,6 +3,7 @@ package nz.org.nesi.goji;
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
+import grith.jgrith.Credential;
 import grith.jgrith.plainProxy.LocalProxy;
 
 import java.security.KeyManagementException;
@@ -19,8 +20,12 @@ import org.globusonline.transfer.BaseTransferAPIClient;
 public class Goji {
 
 	public static final String VERSION = "v0.10";
+	public static final String DEV_URL = "https://transfer.qa.api.globusonline.org/dev";
+
 	public static final String DEFAULT_BASE_URL = "https://transfer.api.globusonline.org/"
 			+ VERSION;
+
+	// public static final String DEFAULT_BASE_URL = DEV_URL;
 
 	public static void main(String[] args) throws KeyManagementException,
 	NoSuchAlgorithmException, Exception {
@@ -30,6 +35,12 @@ public class Goji {
 
 		String go_username = "nz";
 
+		Credential c = new Credential();
+
+
+		// BaseTransferAPIClient client = new GssJSONTransferAPIClient(
+		// go_username, trustedCAFile, c.getCredential(),
+		// Goji.DEFAULT_BASE_URL);
 
 		BCTransferAPIClient client = new BCTransferAPIClient(go_username,
 				BaseTransferAPIClient.FORMAT_JSON, LocalProxy.PROXY_FILE,

@@ -61,7 +61,7 @@
 		<dependency>
 			<groupId>grith</groupId>
 			<artifactId>jgrith</artifactId>
-			<version>0.6.0</version>
+			<version>0.6.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.inject</groupId>
@@ -74,14 +74,14 @@
 			<version>0.9.0</version>
 		</dependency>
 		<dependency>
-			<groupId>grisu</groupId>
-			<artifactId>grid-jcommons</artifactId>
-			<version>1.5.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.globusonline</groupId>
 			<artifactId>transfer-api-client-java</artifactId>
-			<version>0.10.6</version>
+			<version>0.10.7-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>au.org.arcs.infosystems</groupId>
+			<artifactId>mysql-mds</artifactId>
+			<version>0.9.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

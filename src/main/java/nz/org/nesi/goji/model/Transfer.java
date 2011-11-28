@@ -61,6 +61,10 @@ public class Transfer {
 		return info.getStatus();
 	}
 
+	public String getTaskId() {
+		return taskId;
+	}
+
 	public boolean isFinished() {
 		return isFinished(false);
 	}

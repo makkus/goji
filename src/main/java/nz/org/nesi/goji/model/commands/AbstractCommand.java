@@ -15,6 +15,7 @@ import nz.org.nesi.goji.exceptions.RequestException;
 import nz.org.nesi.goji.model.Endpoint;
 
 import org.apache.commons.lang.StringUtils;
+import org.globusonline.transfer.APIError;
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -163,17 +164,29 @@ public abstract class AbstractCommand {
 		myLogger.debug("Executing GO command: " + name + " using path: "
 				+ getPath());
 		try {
-			HttpsURLConnection c = client.request(this.getMethodType()
-					.toString(), this.getPath(), getJsonData(), null);
+			String m = this.getMethodType().toString();
+			String path = this.getPath();
+			String json = getJsonData();
+
+			HttpsURLConnection c = client.request(m, path, json, null);
 			myLogger.debug("Executed GO command: " + name);
 			setResult(c);
 			failed = false;
+		} catch (APIError apie) {
+			failed = true;
+			exception = apie;
+			myLogger.debug(
+					"Can't execute GO command " + name + ": " + apie.toString(),
+					apie);
+			throw new CommandException("Could not execute command: "
+					+ apie.toString(), apie);
 		} catch (Exception e) {
 			failed = true;
 			exception = e;
 			myLogger.debug(
 					"Can't execute GO command " + name + ": "
-							+ e.getLocalizedMessage(), e);
+							+ e.getLocalizedMessage(),
+							e);
 			throw new CommandException("Could not execute command: "
 					+ e.getLocalizedMessage(), e);
 

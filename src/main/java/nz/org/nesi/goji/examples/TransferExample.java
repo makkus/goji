@@ -1,7 +1,7 @@
 package nz.org.nesi.goji.examples;
 
+import grith.jgrith.Credential;
 import nz.org.nesi.goji.control.GlobusOnlineSession;
-import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Transfer;
 
 public class TransferExample {
@@ -22,7 +22,7 @@ public class TransferExample {
 		// endpoints since I don't have any filesystems I can access with a
 		// "plain", non-voms proxy.
 		// You might not need to do it...
-		Credential nz_nesi = session.getCredential().createVomsCredential(
+		Credential nz_nesi = session.getCredential().getVomsCredential(
 				"/nz/nesi");
 		// making sure that the proxy is accessible for GlobusOnline via MyProxy
 		// internally, Goji creates a random username/password combination for

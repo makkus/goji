@@ -4,6 +4,7 @@ import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
 import grisu.jcommons.model.info.GFile;
+import grith.jgrith.Credential;
 import grith.jgrith.plainProxy.LocalProxy;
 
 import java.io.File;
@@ -14,7 +15,6 @@ import java.util.SortedSet;
 
 import nz.org.nesi.goji.Goji;
 import nz.org.nesi.goji.exceptions.CommandException;
-import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.Transfer;
 import nz.org.nesi.goji.model.commands.AbstractCommand;
@@ -112,6 +112,10 @@ public class GlobusOnlineSession {
 		}
 
 		this.credential = cred;
+		// to make sure we can create JSONTransferAPIClient
+		// // TODO use client that can take credential directly
+		this.credential.saveCredential();
+
 		try {
 			client = new JSONTransferAPIClient(go_username,
 					System.getProperty("user.home") + File.separator
@@ -123,10 +127,20 @@ public class GlobusOnlineSession {
 			throw new RuntimeException(e);
 		}
 
-		// retrieving endpoints in background
-		loadEndpoints(false);
+		try {
+			// client = new GssJSONTransferAPIClient(go_username,
+			// System.getProperty("user.home") + File.separator
+			// + ".globus" + File.separator + "certificates"
+			// + File.separator + "gd_bundle.crt",
+			// cred.getCredential(),
+			// Goji.DEFAULT_BASE_URL);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 
 		cred.uploadMyProxy();
+		// retrieving endpoints in background
+		loadEndpoints(false);
 
 	}
 
@@ -253,6 +267,7 @@ public class GlobusOnlineSession {
 			throws CommandException {
 
 		Credential tmp = getCredential(fqan);
+		tmp.uploadMyProxy();
 		activateEndpoint(ep, tmp, forceReactivate);
 
 	}
@@ -274,6 +289,7 @@ public class GlobusOnlineSession {
 		Activate a = newCommand(Activate.class);
 		a.setEndpoint(ep);
 		a.setCredential(cred);
+
 		if (cred != null) {
 			// make sure the proxy is in MyProxy
 			cred.uploadMyProxy();
@@ -487,7 +503,7 @@ public class GlobusOnlineSession {
 	 */
 	public Credential getCredential(String fqan) {
 		if (proxies.get(fqan) == null) {
-			Credential temp = getCredential().createVomsCredential(fqan);
+			Credential temp = getCredential().getVomsCredential(fqan);
 			proxies.put(fqan, temp);
 		}
 		return proxies.get(fqan);
@@ -685,6 +701,7 @@ public class GlobusOnlineSession {
 
 		TransferCommand t = newCommand(TransferCommand.class);
 		t.addTransfer(sourceUrl, targetUrl);
+
 
 		t.execute();
 

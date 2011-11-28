@@ -1,9 +1,12 @@
 package nz.org.nesi.goji.examples.info;
 
-import grisu.info.ynfo.YnfoManager;
+import grisu.control.info.SqlInfoManager;
 import grisu.jcommons.interfaces.InfoManager;
+import grith.jgrith.Credential;
+import grith.jgrith.CredentialFactory;
 import nz.org.nesi.goji.control.GlobusOnlineUserSession;
 import nz.org.nesi.goji.exceptions.UserException;
+import nz.org.nesi.goji.model.Endpoint;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -18,15 +21,33 @@ public class GojiTest {
 
 		GlobusOnlineUserSession session = null;
 
-		InfoManager im = new YnfoManager(
-				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+		// Credential c = new Credential();
 
-		if (StringUtils.isNotBlank(args[0])) {
-			session = new GlobusOnlineUserSession("nz", args[0].toCharArray(),
-					im);
-		} else {
-			session = new GlobusOnlineUserSession("nz", im);
-		}
+		// BaseTransferAPIClient client = new GssJSONTransferAPIClient(
+		// go_username, trustedCAFile, c.getCredential(),
+		// Goji.DEFAULT_BASE_URL);
+
+		// InfoManager im = new YnfoManager(
+		// "/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+
+		InfoManager im = new SqlInfoManager();
+
+		// Credential c = new Credential("markus", "nixenixe25".toCharArray(),
+		// "myproxy.arcs.org.au", 7512);
+
+		Credential c = CredentialFactory.createFromCommandline();
+		c.saveCredential();
+		// Credential c = new Credential("0istbesserals00".toCharArray());
+		// c.saveCredential();
+
+		session = new GlobusOnlineUserSession("markus", c, im);
+
+		// if ((args.length == 1) && StringUtils.isNotBlank(args[0])) {
+		// session = new GlobusOnlineUserSession("nz", args[0].toCharArray(),
+		// im);
+		// } else {
+		// session = new GlobusOnlineUserSession("markus", im);
+		// }
 
 		System.out.println("All available VOs:");
 		System.out.println(StringUtils.join(session.getFqans(), "\n"));
@@ -34,6 +55,11 @@ public class GojiTest {
 		// session.removeAllEndpoints();
 		// session.createAllEndpoints();
 
+		for (Endpoint ep : session.getAllUserEndpoints()) {
+
+			System.out.println("Endpoint " + ep.getName() + ": "
+					+ ep.getHostname());
+		}
 
 		session.activateAllEndpoints();
 

@@ -1,7 +1,7 @@
 package nz.org.nesi.goji.examples;
 
+import grith.jgrith.Credential;
 import nz.org.nesi.goji.control.GlobusOnlineSession;
-import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Transfer;
 
 public class WaitForTransferExample {

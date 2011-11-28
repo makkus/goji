@@ -17,10 +17,10 @@
 
 package nz.org.nesi.goji.model.commands;
 
+import grith.jgrith.Credential;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;
-import nz.org.nesi.goji.model.Credential;
 
 import org.apache.commons.lang.StringUtils;
 import org.bestgrid.goji.utils.EndpointHelpers;

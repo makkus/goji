@@ -3,13 +3,13 @@ package nz.org.nesi.goji.examples.info;
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.interfaces.InfoManager;
+import grith.jgrith.Credential;
 
 import java.util.Map;
 
 import nz.org.nesi.goji.control.UserEnvironment;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.UserException;
-import nz.org.nesi.goji.model.Credential;
 import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.commands.Activate;
 

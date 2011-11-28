@@ -4,13 +4,15 @@ import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
+import grith.jgrith.Credential;
 
 import java.util.Map;
 import java.util.Set;
 
 import nz.org.nesi.goji.exceptions.CommandException;
-import nz.org.nesi.goji.model.Credential;
+import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.model.Endpoint;
+import nz.org.nesi.goji.model.Transfer;
 
 import org.bestgrid.goji.utils.EndpointHelpers;
 import org.slf4j.Logger;
@@ -159,12 +161,70 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 		}
 	}
 
+	public String ensureGlobusUrl(String url) throws FileSystemException {
+
+		Directory d = getDirectory(url);
+		if (d == null) {
+			throw new FileSystemException(
+					"File can't be mapped to one of the existing filesystems: "
+							+ url);
+		}
+		return endpoint_username + "#" + d.getAlias() + d.getPath()
+				+ d.getRelativePath(url);
+	}
+
+	public String ensureGsiftpUrl(String url) throws FileSystemException {
+
+		Directory d = getDirectory(url);
+		return d.getUrl() + d.getRelativePath(url);
+	}
+
 	public Set<Directory> getDirectories() {
 		return directories;
 	}
 
+	/**
+	 * Returns the directory that can be accessed with the specified endpoint or
+	 * url.
+	 * 
+	 * Note, this only works for endpoints that are auto-created by Goji, since
+	 * otherwise we can't figure out which VO to use to access the filesystem.
+	 * 
+	 * @param endpointName_or_url
+	 *            the endpoint or a url
+	 * @return the directory or null if no directory can be found
+	 * @throws FileSystemException
+	 */
+	public Directory getDirectory(String endpointName_or_url)
+			throws FileSystemException {
 
+		for (Directory d : getDirectories()) {
 
+			if (endpointName_or_url.startsWith("gsiftp")) {
+				String url = d.getUrl();
+				if (endpointName_or_url.startsWith(url)) {
+					return d;
+				}
+			} else {
+				// String fqan = d.getFqan();
+				// String host = d.getFilesystem().getHost();
+				//
+				// String name = EndpointHelpers.translateIntoEndpointName(host,
+				// fqan);
+				String name = d.getAlias();
+
+				if (endpointName_or_url.startsWith(name)
+						|| endpointName_or_url.startsWith(endpoint_username
+								+ "#" + name)) {
+					return d;
+				}
+			}
+		}
+
+		throw new FileSystemException(
+				"Url can't be mapped to any of the existing filesystems: "
+						+ endpointName_or_url);
+	}
 
 	/**
 	 * Returns all the filesystems a user has access to.
@@ -201,6 +261,18 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 
 		}
 
+	}
+
+	@Override
+	public Transfer transfer(String sourceUrl, String targetUrl)
+			throws CommandException {
+		try {
+			sourceUrl = ensureGlobusUrl(sourceUrl);
+			targetUrl = ensureGlobusUrl(targetUrl);
+		} catch (FileSystemException e) {
+			throw new CommandException(e);
+		}
+		return super.transfer(sourceUrl, targetUrl);
 	}
 
 
