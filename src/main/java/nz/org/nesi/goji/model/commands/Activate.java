@@ -17,7 +17,7 @@
 
 package nz.org.nesi.goji.model.commands;
 
-import grith.jgrith.Credential;
+import grith.jgrith.credential.Credential;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;

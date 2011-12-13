@@ -6,11 +6,12 @@ import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
 import grisu.jcommons.model.info.GFile;
 import grisu.jcommons.utils.FileAndUrlHelpers;
-import grith.jgrith.Credential;
-import grith.jgrith.CredentialHelpers;
+import grith.jgrith.credential.Credential;
+import grith.jgrith.credential.WrappedGssCredential;
 import grith.jgrith.myProxy.MyProxy_light;
 import grith.jgrith.plainProxy.LocalProxy;
 import grith.jgrith.plainProxy.PlainProxy;
+import grith.jgrith.utils.CredentialHelpers;
 import grith.jgrith.voms.VO;
 import grith.jgrith.voms.VOManagement.VOManagement;
 
@@ -401,7 +402,7 @@ public class UserEnvironment {
 
 		if (result == null) {
 
-			result = new Credential(currentProxy, fqans.get(fqan), fqan);
+			result = new WrappedGssCredential(currentProxy, fqans.get(fqan), fqan);
 			proxies.put(fqan, result);
 		}
 
@@ -648,7 +649,7 @@ public class UserEnvironment {
 		for (Credential cred : proxies.values()) {
 
 			try {
-				cred.invalidate();
+				cred.destroy();
 			} catch (CredentialException e) {
 				e.printStackTrace();
 			}

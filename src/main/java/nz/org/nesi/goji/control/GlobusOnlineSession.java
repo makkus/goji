@@ -4,7 +4,9 @@ import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
 import grisu.jcommons.model.info.GFile;
-import grith.jgrith.Credential;
+import grith.jgrith.credential.Credential;
+import grith.jgrith.credential.ProxyCredential;
+import grith.jgrith.credential.X509Credential;
 import grith.jgrith.plainProxy.LocalProxy;
 
 import java.io.File;
@@ -67,7 +69,7 @@ public class GlobusOnlineSession {
 	}
 
 	public GlobusOnlineSession(String go_username, char[] certPassphrase) throws CredentialException {
-		this(go_username, new Credential(certPassphrase), Goji.DEFAULT_BASE_URL);
+		this(go_username, new X509Credential(certPassphrase), Goji.DEFAULT_BASE_URL);
 	}
 
 	/**
@@ -157,7 +159,7 @@ public class GlobusOnlineSession {
 	 */
 	public GlobusOnlineSession(String go_username, String pathToCredential)
 			throws CredentialException {
-		this(go_username, new Credential(pathToCredential),
+		this(go_username, new ProxyCredential(pathToCredential),
 				Goji.DEFAULT_BASE_URL);
 	}
 

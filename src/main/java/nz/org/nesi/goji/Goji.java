@@ -3,7 +3,8 @@ package nz.org.nesi.goji;
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
-import grith.jgrith.Credential;
+import grith.jgrith.credential.Credential;
+import grith.jgrith.credential.ProxyCredential;
 import grith.jgrith.plainProxy.LocalProxy;
 
 import java.security.KeyManagementException;
@@ -35,7 +36,7 @@ public class Goji {
 
 		String go_username = "nz";
 
-		Credential c = new Credential();
+		Credential c = new ProxyCredential();
 
 
 		// BaseTransferAPIClient client = new GssJSONTransferAPIClient(

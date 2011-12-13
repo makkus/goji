@@ -4,7 +4,7 @@ import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
-import grith.jgrith.Credential;
+import grith.jgrith.credential.Credential;
 
 import java.util.Map;
 import java.util.Set;

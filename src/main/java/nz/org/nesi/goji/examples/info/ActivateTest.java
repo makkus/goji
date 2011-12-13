@@ -3,7 +3,7 @@ package nz.org.nesi.goji.examples.info;
 import grisu.info.ynfo.YnfoManager;
 import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.interfaces.InfoManager;
-import grith.jgrith.Credential;
+import grith.jgrith.credential.Credential;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ public class ActivateTest {
 	 * @throws CommandException
 	 */
 	public static void main(String[] args) throws UserException,
-			CredentialException, CommandException {
+	CredentialException, CommandException {
 
 		UserEnvironment user = null;
 

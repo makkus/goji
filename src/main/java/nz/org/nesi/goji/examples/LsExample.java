@@ -2,7 +2,8 @@ package nz.org.nesi.goji.examples;
 
 import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.model.info.GFile;
-import grith.jgrith.Credential;
+import grith.jgrith.credential.Credential;
+import grith.jgrith.credential.X509Credential;
 
 import java.util.Set;
 
@@ -23,7 +24,7 @@ public class LsExample {
 		String go_user = "nz";
 
 		// creating the session
-		Credential cred = new Credential(args[0].toCharArray());
+		Credential cred = new X509Credential(args[0].toCharArray());
 		GlobusOnlineSession session = new GlobusOnlineSession(go_user, cred);
 
 		// Creating a voms proxy out of the default proxy (need that for my

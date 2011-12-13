@@ -2,8 +2,8 @@ package nz.org.nesi.goji.examples.info;
 
 import grisu.control.info.SqlInfoManager;
 import grisu.jcommons.interfaces.InfoManager;
-import grith.jgrith.Credential;
-import grith.jgrith.CredentialFactory;
+import grith.jgrith.credential.Credential;
+import grith.jgrith.credential.CredentialFactory;
 import nz.org.nesi.goji.control.GlobusOnlineUserSession;
 import nz.org.nesi.goji.exceptions.UserException;
 import nz.org.nesi.goji.model.Endpoint;
@@ -27,8 +27,8 @@ public class GojiTest {
 		// go_username, trustedCAFile, c.getCredential(),
 		// Goji.DEFAULT_BASE_URL);
 
-		// InfoManager im = new YnfoManager(
-		// "/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+		//		 InfoManager im = new YnfoManager(
+		//		 "/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
 
 		InfoManager im = new SqlInfoManager();
 
@@ -53,7 +53,7 @@ public class GojiTest {
 		System.out.println(StringUtils.join(session.getFqans(), "\n"));
 
 		// session.removeAllEndpoints();
-		// session.createAllEndpoints();
+		session.createAllEndpoints();
 
 		for (Endpoint ep : session.getAllUserEndpoints()) {
 

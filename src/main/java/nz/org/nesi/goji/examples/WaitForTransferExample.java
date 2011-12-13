@@ -1,6 +1,7 @@
 package nz.org.nesi.goji.examples;
 
-import grith.jgrith.Credential;
+import grith.jgrith.credential.Credential;
+import grith.jgrith.credential.X509Credential;
 import nz.org.nesi.goji.control.GlobusOnlineSession;
 import nz.org.nesi.goji.model.Transfer;
 
@@ -15,7 +16,7 @@ public class WaitForTransferExample {
 		String go_user = "nz";
 
 		// creating the session
-		Credential cred = new Credential(args[0].toCharArray());
+		Credential cred = new X509Credential(args[0].toCharArray());
 		GlobusOnlineSession session = new GlobusOnlineSession(go_user, cred);
 
 		Transfer t = session
