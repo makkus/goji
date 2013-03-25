@@ -1,7 +1,7 @@
 package nz.org.nesi.goji.examples.info;
 
-import grisu.control.info.SqlInfoManager;
-import grisu.jcommons.interfaces.InfoManager;
+import grisu.jcommons.interfaces.GrinformationManagerDozer;
+import grisu.jcommons.interfaces.InformationManager;
 import nz.org.nesi.goji.control.GlobusOnlineUserSession;
 import nz.org.nesi.goji.exceptions.UserException;
 import nz.org.nesi.goji.model.Transfer;
@@ -22,13 +22,14 @@ public class GojiTransfer {
 		// InfoManager im = new YnfoManager(
 		// "/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
 
-		InfoManager im = new SqlInfoManager();
+//		YnfoManager im = new YnfoManager("nesi");
+		InformationManager informationManager = new GrinformationManagerDozer("/data/src/config/nesi-grid-info/nesi_info.groovy");
 
 		if ((args.length == 1) && StringUtils.isNotBlank(args[0])) {
-			session = new GlobusOnlineUserSession("nz", args[0].toCharArray(),
-					im);
+			session = new GlobusOnlineUserSession("markus", args[0].toCharArray(),
+					informationManager);
 		} else {
-			session = new GlobusOnlineUserSession("markus", im);
+			session = new GlobusOnlineUserSession("markus", informationManager);
 		}
 
 
@@ -43,13 +44,13 @@ public class GojiTransfer {
 		// "gsiftp://df.auckland.ac.nz/~/simpleTestFile.txt",
 		// "gsiftp://gram5.ceres.auckland.ac.nz/~/tttttt222");
 		Transfer t = session.transfer(
-				"markus#df_auckland_ac_nz--nz_nesi/~/halt-pvm.sh",
-				"markus#df_auckland_ac_nz--nz_nesi/~/testfolder/halt-pvm.sh");
+				"markus#pan/~/grid-client.jar",
+				"markus#canterbury_p7/~/testfolder/grid-client.jar");
 
 		t.waitForTransferToFinish();
 		System.out.println("Finished.");
 
-
+		System.exit(0);
 	}
 
 }

@@ -1,16 +1,18 @@
 package nz.org.nesi.goji.control;
 
 import grisu.jcommons.exceptions.CredentialException;
-import grisu.jcommons.model.info.Directory;
-import grisu.jcommons.model.info.FileSystem;
 import grisu.jcommons.model.info.GFile;
-import grith.jgrith.credential.Credential;
-import grith.jgrith.credential.ProxyCredential;
-import grith.jgrith.credential.X509Credential;
+import grisu.model.info.dto.Directory;
+import grisu.model.info.dto.FileSystem;
+import grisu.model.info.dto.Group;
+import grith.jgrith.cred.Cred;
+import grith.jgrith.cred.ProxyCred;
+import grith.jgrith.cred.X509Cred;
 import grith.jgrith.plainProxy.LocalProxy;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -29,13 +31,14 @@ import nz.org.nesi.goji.model.commands.PARAM;
 import nz.org.nesi.goji.model.commands.TransferCommand;
 
 import org.apache.commons.lang.StringUtils;
-import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.globusonline.transfer.JSONTransferAPIClient;
 import org.python.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
 
 public class GlobusOnlineSession {
@@ -49,9 +52,7 @@ public class GlobusOnlineSession {
 
 	private Set<Endpoint> endpoints;
 
-	private final Map<String, Credential> proxies = Maps.newConcurrentMap();
-
-	private Credential credential = null;
+	private Cred credential = null;
 
 	/**
 	 * This constructor requires you to have a valid local proxy on the default
@@ -69,7 +70,7 @@ public class GlobusOnlineSession {
 	}
 
 	public GlobusOnlineSession(String go_username, char[] certPassphrase) throws CredentialException {
-		this(go_username, new X509Credential(certPassphrase), Goji.DEFAULT_BASE_URL);
+		this(go_username, X509Cred.create(certPassphrase), Goji.DEFAULT_BASE_URL);
 	}
 
 	/**
@@ -85,7 +86,7 @@ public class GlobusOnlineSession {
 	 * @throws CredentialException
 	 *             if MyProxy delegation of credential fails
 	 */
-	public GlobusOnlineSession(String go_username, Credential cred) throws CredentialException {
+	public GlobusOnlineSession(String go_username, Cred cred) throws CredentialException {
 		this(go_username, cred, null);
 	}
 
@@ -104,7 +105,7 @@ public class GlobusOnlineSession {
 	 * @throws CredentialException
 	 *             if MyProxy delegation of credential fails
 	 */
-	public GlobusOnlineSession(String go_username, Credential cred,
+	public GlobusOnlineSession(String go_username, Cred cred,
 			String go_url) throws CredentialException {
 		this.go_username = go_username;
 		if (StringUtils.isBlank(go_url)) {
@@ -116,15 +117,16 @@ public class GlobusOnlineSession {
 		this.credential = cred;
 		// to make sure we can create JSONTransferAPIClient
 		// // TODO use client that can take credential directly
-		this.credential.saveCredential();
+		this.credential.saveProxy();
 
 		try {
 			client = new JSONTransferAPIClient(go_username,
 					System.getProperty("user.home") + File.separator
 					+ ".globus" + File.separator + "certificates"
 					+ File.separator + "gd_bundle.crt",
-					cred.getLocalPath(), cred.getLocalPath(),
+					cred.getProxyPath(), cred.getProxyPath(),
 					Goji.DEFAULT_BASE_URL);
+			client.setUseMultiThreaded(true);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -159,7 +161,7 @@ public class GlobusOnlineSession {
 	 */
 	public GlobusOnlineSession(String go_username, String pathToCredential)
 			throws CredentialException {
-		this(go_username, new ProxyCredential(pathToCredential),
+		this(go_username, new ProxyCred(pathToCredential),
 				Goji.DEFAULT_BASE_URL);
 	}
 
@@ -204,8 +206,29 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint could not be activated
 	 */
-	public void activateEndpoint(Directory d, boolean forceReactivate) throws CommandException {
-		activateEndpoint(getEndpointName(d), d.getFqan(), forceReactivate);
+	public void activateEndpoint(final Directory d, final boolean forceReactivate) throws CommandException {
+		
+		Collection<Group> groups = d.getGroups();
+		final Set<String> avail_groups = getCredential().getAvailableFqans().keySet();
+		
+		Collection<Group> intersection = Collections2.filter(groups, new Predicate<Group>() {
+
+			public boolean apply(Group input) {
+				String fqan = input.getFqan();
+				if ( avail_groups.contains(fqan) ) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+		});
+		
+		if ( intersection.size() == 0 ) {
+			throw new CommandException("No group available to activate endpoint:"+d.getAlias());
+		}
+		
+		activateEndpoint(getEndpointName(d), intersection.iterator().next().toString(), forceReactivate);
+
 	}
 
 	/**
@@ -218,7 +241,7 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint can't be activated
 	 */
-	public void activateEndpoint(String ep, Credential cred)
+	public void activateEndpoint(String ep, Cred cred)
 			throws CommandException {
 		activateEndpoint(ep, cred, false);
 	}
@@ -237,16 +260,18 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint can't be activated for some reason
 	 */
-	public void activateEndpoint(String ep, Credential cred,
+	public void activateEndpoint(String ep, Cred cred,
 			boolean forceReactivate)
 					throws CommandException {
 
+		synchronized (ep) {
 		if (forceReactivate || !isActivated(ep)) {
 			activateOrReactivateEndpoint(ep, cred);
 			loadEndpoints(true);
 			return;
 		} else {
 			return;
+		}
 		}
 	}
 
@@ -268,7 +293,7 @@ public class GlobusOnlineSession {
 	public void activateEndpoint(String ep, String fqan, boolean forceReactivate)
 			throws CommandException {
 
-		Credential tmp = getCredential(fqan);
+		Cred tmp = getCredential().getGroupCredential(fqan);
 		tmp.uploadMyProxy();
 		activateEndpoint(ep, tmp, forceReactivate);
 
@@ -286,7 +311,7 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the Endpoint can't be activated
 	 */
-	public void activateOrReactivateEndpoint(String ep, Credential cred)
+	public void activateOrReactivateEndpoint(String ep, Cred cred)
 			throws CommandException {
 		Activate a = newCommand(Activate.class);
 		a.setEndpoint(ep);
@@ -317,7 +342,7 @@ public class GlobusOnlineSession {
 	public void activateOrReactivateEndpoint(String ep, String fqan)
 			throws CommandException {
 
-		Credential tmp = getCredential(fqan);
+		Cred tmp = getCredential().getGroupCredential(fqan);
 		activateOrReactivateEndpoint(ep, tmp);
 
 	}
@@ -333,9 +358,9 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint could not be created
 	 */
-	public void addEndpoint(Directory d, String myProxyHost)
+	public void addEndpoint(Directory d)
 			throws CommandException {
-		addEndpoint(d.getFilesystem(), d.getAlias(), myProxyHost);
+		addEndpoint(d.getFilesystem(), d.getAlias());
 	}
 
 	/**
@@ -351,14 +376,10 @@ public class GlobusOnlineSession {
 	 *             if the endpoint can't be created or the group is not
 	 *             available for the user
 	 */
-	public void addEndpoint(FileSystem fs, String fqan, String myProxyHost)
+	public void addEndpoint(FileSystem fs, String alias)
 			throws CommandException {
 
-		if (!getFqans().contains(fqan)) {
-			throw new CommandException("Group not available: " + fqan);
-		}
-		String endpointAlias = getEndpointName(fs, fqan);
-		addEndpoint(fs.getHost(), endpointAlias);
+		addEndpoint(fs.getHost(), alias);
 
 	}
 
@@ -488,36 +509,19 @@ public class GlobusOnlineSession {
 	 * 
 	 * @return the credential
 	 */
-	public Credential getCredential() {
+	public Cred getCredential() {
 		return this.credential;
 	}
 
-	/**
-	 * Get a voms-enabled credential that was created out of the initial session
-	 * credential used to connect to GlobusOnline.
-	 * 
-	 * This returns a cached credential if one for the specified fqan was
-	 * already requested.
-	 * 
-	 * @param fqan
-	 *            the group
-	 * @return the credential
-	 */
-	public Credential getCredential(String fqan) {
-		if (proxies.get(fqan) == null) {
-			Credential temp = getCredential().getVomsCredential(fqan);
-			proxies.put(fqan, temp);
-		}
-		return proxies.get(fqan);
-	}
 
 	protected String getEndpointName(Directory d) {
-		return getEndpointName(d.getFilesystem(), d.getFqan());
+		//return getEndpointName(d.getFilesystem(), d.getAlias());
+		return d.getAlias();
 	}
 
-	protected String getEndpointName(FileSystem fs, String fqan) {
-		return EndpointHelpers.translateIntoEndpointName(fs.getAlias(), fqan);
-	}
+//	protected String getEndpointName(FileSystem fs, String fqan) {
+//		return EndpointHelpers.translateIntoEndpointName(fs.getAlias(), fqan);
+//	}
 
 	/**
 	 * Get all fqans (groups) that are available to the user when using the default session credential and the system-configured VOs (vomses files in ~/.glite/vomses)
@@ -668,14 +672,9 @@ public class GlobusOnlineSession {
 	}
 
 	public void removeEndpoint(Directory d) throws CommandException {
-		removeEndpoint(getEndpointName(d.getFilesystem(), d.getFqan()));
+		removeEndpoint(d.getAlias());
 	}
 
-	public void removeEndpoint(FileSystem fs, String fqan)
-			throws CommandException {
-		String endpointAlias = getEndpointName(fs, fqan);
-		removeEndpoint(endpointAlias);
-	}
 
 	public void removeEndpoint(String endpointname) throws CommandException {
 

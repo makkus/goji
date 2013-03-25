@@ -16,11 +16,11 @@
  */
 package nz.org.nesi.goji.model.commands;
 
+import grisu.jcommons.utils.EndpointHelpers;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
 import org.apache.commons.lang.StringUtils;
-import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globusonline.transfer.BaseTransferAPIClient;
 
 public class ActivationRequirements extends AbstractCommand {

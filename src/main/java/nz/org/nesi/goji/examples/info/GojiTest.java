@@ -1,14 +1,24 @@
 package nz.org.nesi.goji.examples.info;
 
-import grisu.control.info.SqlInfoManager;
-import grisu.jcommons.interfaces.InfoManager;
-import grith.jgrith.credential.Credential;
-import grith.jgrith.credential.CredentialFactory;
+import grisu.jcommons.interfaces.GrinformationManagerDozer;
+import grisu.jcommons.interfaces.InformationManager;
+import grisu.jcommons.model.info.GFile;
+import grisu.model.info.dto.Directory;
+import grith.jgrith.Environment;
+import grith.jgrith.cred.Cred;
+import grith.jgrith.cred.MyProxyCred;
+
+import java.util.SortedSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import nz.org.nesi.goji.control.GlobusOnlineUserSession;
+import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.UserException;
 import nz.org.nesi.goji.model.Endpoint;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 
 public class GojiTest {
@@ -18,8 +28,9 @@ public class GojiTest {
 	 * @throws UserException
 	 */
 	public static void main(String[] args) throws Exception {
+		
+		Environment.initEnvironment();
 
-		GlobusOnlineUserSession session = null;
 
 		// Credential c = new Credential();
 
@@ -29,18 +40,15 @@ public class GojiTest {
 
 		//		 InfoManager im = new YnfoManager(
 		//		 "/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
-
-		InfoManager im = new SqlInfoManager();
+		
+		InformationManager informationManager = new GrinformationManagerDozer("/data/src/config/nesi-grid-info/nesi_info.groovy");
 
 		// Credential c = new Credential("markus", "nixenixe25".toCharArray(),
 		// "myproxy.arcs.org.au", 7512);
 
-		Credential c = CredentialFactory.createFromCommandline();
-		c.saveCredential();
-		// Credential c = new Credential("0istbesserals00".toCharArray());
-		// c.saveCredential();
+		Cred c = MyProxyCred.loadFromDefault();
 
-		session = new GlobusOnlineUserSession("markus", c, im);
+		final GlobusOnlineUserSession session = new GlobusOnlineUserSession("markus", c, informationManager);
 
 		// if ((args.length == 1) && StringUtils.isNotBlank(args[0])) {
 		// session = new GlobusOnlineUserSession("nz", args[0].toCharArray(),
@@ -52,8 +60,10 @@ public class GojiTest {
 		System.out.println("All available VOs:");
 		System.out.println(StringUtils.join(session.getFqans(), "\n"));
 
-		// session.removeAllEndpoints();
+//		session.removeAllEndpoints();
 		session.createAllEndpoints();
+		
+//		System.exit(0);
 
 		for (Endpoint ep : session.getAllUserEndpoints()) {
 
@@ -61,8 +71,47 @@ public class GojiTest {
 					+ ep.getHostname());
 		}
 
-		session.activateAllEndpoints();
+//		long start = new Date().getTime();
+//		session.activateAllEndpoints();
+//		long end = new Date().getTime();	
+//		System.out.println("Time to activate endpoints: "+(end-start)/1000+" seconds");
+		int threads = 20;
+//		ExecutorService executor = Executors.newFixedThreadPool(session.getDirectories().size());
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
+		
+		for (final Directory d : session.getDirectories()) {
+			Thread t = new Thread() {
+				public void run() {
+					try {
+//						session.getAllEndpoints(true);
+						System.out.println("Started");
+						session.activateEndpoint(d, false);
+						SortedSet<GFile> files = session.listDirectory(d.getAlias(), d.getPath());
+						System.out.println("Finished");
+						for ( GFile f : files ) {
+							System.out.println("FILE: "+f.toString());
+						}
+						System.out.println("Listed "+d.getAlias());
+					} catch (CommandException e) {
 
+						System.err.println("ERROR: "+e.getLocalizedMessage());
+					}
+				}
+			};
+			executor.execute(t);
+		}
+		
+		executor.shutdown();
+		
+		try {
+			executor.awaitTermination(10, TimeUnit.HOURS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		System.exit(0);
 
 	}
 

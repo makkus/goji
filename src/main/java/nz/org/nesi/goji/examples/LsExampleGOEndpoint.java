@@ -2,8 +2,8 @@ package nz.org.nesi.goji.examples;
 
 import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.model.info.GFile;
-import grith.jgrith.credential.Credential;
-import grith.jgrith.credential.X509Credential;
+import grith.jgrith.cred.Cred;
+import grith.jgrith.cred.X509Cred;
 
 import java.util.Set;
 
@@ -24,7 +24,7 @@ public class LsExampleGOEndpoint {
 		String go_user = "nz";
 
 		// creating the session
-		Credential cred = new X509Credential(args[0].toCharArray());
+		Cred cred = X509Cred.create(args[0].toCharArray());
 		GlobusOnlineSession session = new GlobusOnlineSession(go_user, cred);
 
 		session.activateEndpoint("go#ep1", null);

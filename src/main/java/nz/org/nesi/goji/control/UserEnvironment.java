@@ -1,18 +1,22 @@
 package nz.org.nesi.goji.control;
 
+import grisu.grin.model.Grid;
+import grisu.jcommons.constants.GridEnvironment;
 import grisu.jcommons.exceptions.CredentialException;
-import grisu.jcommons.interfaces.InfoManager;
 import grisu.jcommons.model.info.Directory;
 import grisu.jcommons.model.info.FileSystem;
 import grisu.jcommons.model.info.GFile;
+import grisu.jcommons.utils.EndpointHelpers;
 import grisu.jcommons.utils.FileAndUrlHelpers;
-import grith.jgrith.credential.Credential;
-import grith.jgrith.credential.WrappedGssCredential;
+import grith.jgrith.cred.BaseCred;
+import grith.jgrith.cred.Cred;
+import grith.jgrith.cred.MyProxyCred;
+import grith.jgrith.cred.ProxyCred;
+import grith.jgrith.cred.X509Cred;
+import grith.jgrith.cred.callbacks.StaticCallback;
 import grith.jgrith.myProxy.MyProxy_light;
 import grith.jgrith.plainProxy.LocalProxy;
 import grith.jgrith.plainProxy.PlainProxy;
-import grith.jgrith.utils.CredentialHelpers;
-import grith.jgrith.voms.VO;
 import grith.jgrith.voms.VOManagement.VOManagement;
 
 import java.io.File;
@@ -36,7 +40,6 @@ import nz.org.nesi.goji.model.commands.LsCommand;
 import nz.org.nesi.goji.model.commands.PARAM;
 import nz.org.nesi.goji.model.commands.TransferCommand;
 
-import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globus.common.CoGProperties;
 import org.globus.myproxy.MyProxyException;
 import org.globusonline.transfer.BCTransferAPIClient;
@@ -53,17 +56,17 @@ public class UserEnvironment {
 	static final Logger myLogger = LoggerFactory
 			.getLogger(UserEnvironment.class.getName());
 
-	private final InfoManager im;
+	private final Grid grid;
 
 	private BCTransferAPIClient client = null;
 
 	private final String go_username;
 	private final String endpoint_username;
 
-	private GSSCredential currentProxy = null;
-	private final Map<String, Credential> proxies = Maps.newConcurrentMap();
+	private Cred currentCred = null;
+	private final Map<String, Cred> proxies = Maps.newConcurrentMap();
 
-	private Map<String, VO> fqans = null;
+	private Map<String, grisu.model.info.dto.VO> fqans = null;
 
 	private EndpointList endpointList = null;
 
@@ -83,8 +86,8 @@ public class UserEnvironment {
 	 * @param cred_password
 	 *            the x509 password
 	 */
-	public UserEnvironment(String go_username, char[] cred_password, InfoManager im) {
-		this(go_username, go_username, cred_password, im);
+	public UserEnvironment(String go_username, char[] cred_password, Grid grid) {
+		this(go_username, go_username, cred_password, grid);
 	}
 
 
@@ -97,35 +100,35 @@ public class UserEnvironment {
 	 *            a (valid) proxy
 	 * @throws UserException
 	 */
-	public UserEnvironment(String go_username, GSSCredential proxy, InfoManager im)
+	public UserEnvironment(String go_username, Cred cred, Grid grid)
 			throws UserException {
-		this(go_username, go_username, proxy, im);
+		this(go_username, go_username, cred, grid);
 	}
 
-	public UserEnvironment(String go_username, InfoManager im) throws UserException {
-		this(go_username, go_username, im);
+	public UserEnvironment(String go_username, Grid grid) throws UserException {
+		this(go_username, go_username, grid);
 	}
 
-	public UserEnvironment(String go_username, String endpoint_username, char[] cred_password, InfoManager im) {
+	public UserEnvironment(String go_username, String endpoint_username, char[] cred_password, Grid grid) {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
-		this.im = im;
+		this.grid = grid;
 		init_x509(cred_password);
 	}
 
 	public UserEnvironment(String go_username, String myproxy_username,
-			char[] myproxy_password, String myproxy_host, int myproxy_port, InfoManager im)
+			char[] myproxy_password, String myproxy_host, int myproxy_port, Grid grid)
 					throws UserException {
 		this(go_username, go_username, myproxy_username, myproxy_password,
-				myproxy_host, myproxy_port, im);
+				myproxy_host, myproxy_port, grid);
 	}
 
-	public UserEnvironment(String go_username, String endpoint_username, GSSCredential proxy, InfoManager im)
+	public UserEnvironment(String go_username, String endpoint_username, Cred cred, Grid grid)
 			throws UserException {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
-		this.im = im;
-		init(proxy);
+		this.grid = grid;
+		init(cred);
 	}
 
 	/**
@@ -138,11 +141,11 @@ public class UserEnvironment {
 	 *            the GlobusOnline username
 	 * @throws UserException
 	 */
-	public UserEnvironment(String go_username, String endpoint_username, InfoManager im)
+	public UserEnvironment(String go_username, String endpoint_username, Grid grid)
 			throws UserException {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
-		this.im = im;
+		this.grid = grid;
 		if (LocalProxy.validGridProxyExists()) {
 			init(null);
 		} else {
@@ -153,11 +156,11 @@ public class UserEnvironment {
 
 	public UserEnvironment(String go_username, String endpoint_username, String myproxy_username,
 			char[] myproxy_password,
-			String myproxy_host, int myproxy_port, InfoManager im)
+			String myproxy_host, int myproxy_port, Grid grid)
 					throws UserException {
 		this.go_username = go_username;
 		this.endpoint_username = endpoint_username;
-		this.im = im;
+		this.grid = grid;
 		init_myproxy(myproxy_username, myproxy_password, myproxy_host,
 				myproxy_port);
 	}
@@ -202,7 +205,7 @@ public class UserEnvironment {
 
 			myLogger.debug("Activating endpoint: " + epName);
 
-			Credential cred = getCredential(dir.getFqan());
+			Cred cred = getCredential(dir.getGroups().iterator().next().getFqan());
 			cred.uploadMyProxy();
 
 			Activate a = new Activate(client, epName, cred, 12);
@@ -229,7 +232,7 @@ public class UserEnvironment {
 	}
 
 	public void addEndpoint(Directory d) throws UserException {
-		addEndpoint(d.getFilesystem().getHost(), d.getFqan());
+		addEndpoint(d.getFilesystem().getHost(), d.getGroups().iterator().next().getFqan());
 	}
 
 	public void addEndpoint(String host, String fqan) throws UserException {
@@ -251,7 +254,7 @@ public class UserEnvironment {
 
 		try {
 			EndpointAdd ea = new EndpointAdd(client, host,
-					Credential.DEFAULT_MYPROXY_SERVER, null, false, true,
+					GridEnvironment.getDefaultMyProxyServer(), null, false, true,
 					epName);
 		} catch (CommandException e) {
 			myLogger.error("Can't add endpoint.", e);
@@ -356,7 +359,7 @@ public class UserEnvironment {
 	public String ensureGsiftpUrl(String url) throws FileSystemException {
 
 		Directory d = getDirectory(url);
-		return d.getUrl() + d.getRelativePath(url);
+		return d.toUrl() + d.getRelativePath(url);
 	}
 
 	// public Directory findDirectory(String url) {
@@ -396,17 +399,10 @@ public class UserEnvironment {
 		return client;
 	}
 
-	public Credential getCredential(String fqan) throws CredentialException {
+	public Cred getCredential(String fqan) throws CredentialException {
+		
+		return currentCred.getGroupCredential(fqan);
 
-		Credential result = proxies.get(fqan);
-
-		if (result == null) {
-
-			result = new WrappedGssCredential(currentProxy, fqans.get(fqan), fqan);
-			proxies.put(fqan, result);
-		}
-
-		return proxies.get(fqan);
 
 	}
 
@@ -437,12 +433,12 @@ public class UserEnvironment {
 		for (Directory d : getDirectories() ) {
 
 			if ( endpointName_or_url.startsWith("gsiftp") ) {
-				String url = d.getUrl();
+				String url = d.toUrl();
 				if (endpointName_or_url.startsWith(url)) {
 					return d;
 				}
 			} else {
-				String fqan = d.getFqan();
+				String fqan = d.getGroups().iterator().next().getFqan();
 				String host = d.getFilesystem().getHost();
 
 				String name = EndpointHelpers.translateIntoEndpointName(host, fqan);
@@ -471,7 +467,7 @@ public class UserEnvironment {
 			throw new IllegalArgumentException(
 					"Directory parameter can not be null");
 		}
-		String epName = EndpointHelpers.translateIntoEndpointName(dir.getFilesystem().getHost(), dir.getFqan());
+		String epName = EndpointHelpers.translateIntoEndpointName(dir.getFilesystem().getHost(), dir.getGroups().iterator().next().getFqan());
 		return epName;
 	}
 
@@ -524,7 +520,7 @@ public class UserEnvironment {
 	public String getGlobusOnlineUrl(String url) throws FileSystemException {
 
 		Directory d = getDirectory(url);
-		String root = d.getFilesystem().getUrl();
+		String root = d.getFilesystem().toUrl();
 		String path = url.substring(root.length());
 
 		return getEndpointName(d) + "/" + path;
@@ -543,39 +539,28 @@ public class UserEnvironment {
 	 * @param proxy
 	 *            a (valid) proxy
 	 */
-	public void init(GSSCredential cred) throws UserException {
+	public void init(Cred cred) throws UserException {
 
-		// save proxy file
-		File proxyFile = new File(CoGProperties.getDefault().getProxyFile());
 
 		if (cred == null) {
-			if (!LocalProxy.validGridProxyExists()) {
-				throw new UserException(
-						"No credential provided and no local proxy exists.");
-			} else {
-				try {
-					cred = CredentialHelpers.wrapGlobusCredential(CredentialHelpers
-							.loadGlobusCredential(new File(LocalProxy.PROXY_FILE)));
-				} catch (Exception e) {
-					throw new UserException(
-							"No credential provided and could not read existing local proxy.");
-				}
-			}
+			
+			cred = new ProxyCred();
+
 		}
 
 		try {
-			CredentialHelpers.writeToDisk(cred, proxyFile);
+			cred.saveProxy();
 		} catch (Exception e1) {
 			throw new UserException(e1);
 		}
 
 		// init GO-REST-client
-		currentProxy = cred;
+		this.currentCred = cred;
 
 		try {
 			client = new JSONTransferAPIClient(go_username,
 					"/home/markus/.globus/certificates/gd_bundle.crt",
-					LocalProxy.PROXY_FILE, LocalProxy.PROXY_FILE,
+					this.currentCred.getProxyPath(), this.currentCred.getProxyPath(),
 					Goji.DEFAULT_BASE_URL);
 			// client = new BCTransferAPIClient(go_username,
 			// BaseTransferAPIClient.FORMAT_JSON,
@@ -591,13 +576,13 @@ public class UserEnvironment {
 		}
 
 		// getting VOs of user
-		fqans = VOManagement.getAllFqans(cred, false);
+		fqans = VOManagement.getAllFqans(currentCred.getGSSCredential(), false);
 
 		// calculate all the directories a user has access to
 		directories.clear();
 		getFileSystems().clear();
 		for (String fqan : fqans.keySet()) {
-			directories.addAll(im.getDirectoriesForVO(fqan));
+			directories.addAll(grid.getResources(Directory.class, grid.getGroup(fqan)));
 		}
 		for (Directory dir : directories) {
 			Set<String> fqans = getFileSystems().get(dir.getFilesystem());
@@ -605,7 +590,7 @@ public class UserEnvironment {
 				fqans = Sets.newTreeSet();
 				getFileSystems().put(dir.getFilesystem(), fqans);
 			}
-			fqans.add(dir.getFqan());
+			fqans.add(dir.getGroups().iterator().next().getFqan());
 		}
 
 	}
@@ -614,11 +599,9 @@ public class UserEnvironment {
 			String myproxyHost, int myproxyPort) throws UserException {
 
 		try {
-			GSSCredential cred = MyProxy_light.getDelegation(myproxyHost,
-					myproxyPort, username, password,
-					Credential.DEFAULT_PROXY_LIFETIME_IN_HOURS * 3600);
+			MyProxyCred cred = new MyProxyCred(username, password, myproxyHost, myproxyPort, BaseCred.DEFAULT_PROXY_LIFETIME_IN_SECONDS);
 			init(cred);
-		} catch (MyProxyException e) {
+		} catch (Exception e) {
 			throw new UserException(e);
 		}
 
@@ -633,9 +616,10 @@ public class UserEnvironment {
 	private void init_x509(char[] cert_password) {
 
 		try {
-			GSSCredential credential = PlainProxy.init(cert_password,
-					Credential.DEFAULT_PROXY_LIFETIME_IN_HOURS);
-			init(credential);
+			X509Cred cred = new X509Cred();
+			cred.setCallback(new StaticCallback(cert_password));
+
+			init(cred);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -646,7 +630,7 @@ public class UserEnvironment {
 
 	public void invalidateCredentials() {
 
-		for (Credential cred : proxies.values()) {
+		for (Cred cred : proxies.values()) {
 
 			try {
 				cred.destroy();
@@ -693,7 +677,7 @@ public class UserEnvironment {
 	}
 
 	public void removeEndpoint(Directory d) throws UserException {
-		removeEndpoint(d.getFilesystem().getHost(), d.getFqan());
+		removeEndpoint(d.getFilesystem().getHost(), d.getAlias());
 	}
 
 	public void removeEndpoint(String alias) throws UserException {

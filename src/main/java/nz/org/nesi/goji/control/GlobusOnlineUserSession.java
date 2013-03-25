@@ -1,24 +1,34 @@
 package nz.org.nesi.goji.control;
 
+import grisu.grin.model.Grid;
+import grisu.grin.model.InfoManager;
 import grisu.jcommons.exceptions.CredentialException;
-import grisu.jcommons.interfaces.InfoManager;
-import grisu.jcommons.model.info.Directory;
-import grisu.jcommons.model.info.FileSystem;
-import grith.jgrith.credential.Credential;
+import grisu.jcommons.interfaces.GrinformationManagerDozer;
+import grisu.jcommons.interfaces.InformationManager;
+import grisu.jcommons.utils.EndpointHelpers;
+import grisu.model.info.dto.Directory;
+import grisu.model.info.dto.FileSystem;
+import grith.jgrith.cred.Cred;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import nz.org.nesi.goji.GlobusOnlineConstants;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.Transfer;
 
-import org.bestgrid.goji.utils.EndpointHelpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -28,8 +38,8 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	static final Logger myLogger = LoggerFactory
 			.getLogger(GlobusOnlineUserSession.class.getName());
 
-	private final InfoManager im;
-
+	public final InformationManager informationManager;
+	
 	private final String endpoint_username;
 
 	private final Set<Directory> directories = Sets.newTreeSet();
@@ -38,33 +48,33 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	private final Map<FileSystem, Set<String>> filesystems = Maps.newTreeMap();
 
 	public GlobusOnlineUserSession(String go_username, char[] certPassphrase,
-			InfoManager im) throws CredentialException {
+			InformationManager im) throws CredentialException {
 		super(go_username, certPassphrase);
 
-		this.im = im;
+		this.informationManager = im;
 
 		this.endpoint_username = go_username;
 
 		init();
 	}
 
-	public GlobusOnlineUserSession(String go_username, Credential cred,
-			InfoManager im) throws CredentialException {
+	public GlobusOnlineUserSession(String go_username, Cred cred, InformationManager im)
+			throws CredentialException {
 		super(go_username, cred, null);
 
-		this.im = im;
+		this.informationManager = im;
 
 		this.endpoint_username = go_username;
 
 		init();
 	}
 
-	public GlobusOnlineUserSession(String go_username, Credential cred,
-			String go_url, InfoManager im) throws CredentialException {
+	public GlobusOnlineUserSession(String go_username, Cred cred,
+			String go_url, InformationManager im) throws CredentialException {
 
 		super(go_username, cred, go_url);
 
-		this.im = im;
+		this.informationManager = im;
 
 		this.endpoint_username = go_username;
 
@@ -72,11 +82,11 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 
 	}
 
-	public GlobusOnlineUserSession(String go_username, InfoManager im)
+	public GlobusOnlineUserSession(String go_username, InformationManager im)
 			throws CredentialException {
 		super(go_username);
 
-		this.im = im;
+		this.informationManager = im;
 
 		this.endpoint_username = go_username;
 
@@ -84,10 +94,10 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	}
 
 	public GlobusOnlineUserSession(String go_username, String pathToCredential,
-			InfoManager im) throws CredentialException {
+			InformationManager im) throws CredentialException {
 		super(go_username, pathToCredential);
 
-		this.im = im;
+		this.informationManager = im;
 
 		this.endpoint_username = go_username;
 
@@ -108,12 +118,35 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	 */
 	public void activateAllEndpoints() throws CommandException {
 
-		for (Directory d : getDirectories()) {
-			activateEndpoint(d, false);
+		ExecutorService executor = Executors.newFixedThreadPool(getDirectories().size());
+//		ExecutorService executor = Executors.newFixedThreadPool(1);
+		
+		for (final Directory d : getDirectories()) {
+			
+			Thread t = new Thread() {
+				public void run() {
+					try {
+						System.out.println("ACtivating: "+d.toString());
+						activateEndpoint(d, false);
+						System.out.println("ACtivated: "+d.toString());
+					} catch (CommandException e) {
+						e.printStackTrace();
+					}
+				}
+			};
+			executor.execute(t);
+		}
+		
+		executor.shutdown();
+		
+		try {
+			executor.awaitTermination(10, TimeUnit.HOURS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 	}
-
 
 	/**
 	 * Makes sure that one endpoint exists for each of the {@link Directory}s
@@ -138,11 +171,10 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 
 		Set<Endpoint> allEndpoints = getAllUserEndpoints(true);
 
-		for (FileSystem fs : getFileSystems().keySet()) {
+		for (Directory d : getDirectories()) {
 
-			for (String fqan : getFileSystems().get(fs)) {
 
-				String alias = getEndpointName(fs, fqan);
+				String alias = d.getAlias();
 
 				boolean alreadyExists = false;
 				for (Endpoint ep : allEndpoints) {
@@ -153,11 +185,8 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 				}
 
 				if (!alreadyExists) {
-					addEndpoint(fs.getHost(), alias);
+					addEndpoint(d);
 				}
-
-			}
-
 		}
 	}
 
@@ -170,17 +199,28 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 							+ url);
 		}
 		return endpoint_username + "#" + d.getAlias() + d.getPath()
-				+ d.getRelativePath(url);
+				+ Directory.getRelativePath(d, url);
 	}
 
 	public String ensureGsiftpUrl(String url) throws FileSystemException {
 
 		Directory d = getDirectory(url);
-		return d.getUrl() + d.getRelativePath(url);
+		return d.toUrl() + Directory.getRelativePath(d, url);
 	}
 
-	public Set<Directory> getDirectories() {
-		return directories;
+	public Collection<Directory> getDirectories() {
+
+		return Collections2.filter(directories, new Predicate<Directory>() {
+
+			public boolean apply(Directory d) {
+				String go_endpoint = Directory.getOption(d, GlobusOnlineConstants.DIRECTORY_IS_GLOBUS_ENDPOINT_KEY);
+
+				boolean result =  Boolean.parseBoolean(go_endpoint);
+				
+				return result;
+			}
+		});
+
 	}
 
 	/**
@@ -201,7 +241,7 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 		for (Directory d : getDirectories()) {
 
 			if (endpointName_or_url.startsWith("gsiftp")) {
-				String url = d.getUrl();
+				String url = d.toUrl();
 				if (endpointName_or_url.startsWith(url)) {
 					return d;
 				}
@@ -249,7 +289,7 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 		directories.clear();
 		getFileSystems().clear();
 		for (String fqan : getFqans()) {
-			directories.addAll(im.getDirectoriesForVO(fqan));
+			directories.addAll(informationManager.getDirectoriesForVO(fqan));
 		}
 		for (Directory dir : directories) {
 			Set<String> fqans = getFileSystems().get(dir.getFilesystem());
@@ -257,7 +297,7 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 				fqans = Sets.newTreeSet();
 				getFileSystems().put(dir.getFilesystem(), fqans);
 			}
-			fqans.add(dir.getFqan());
+			// fqans.add(dir.getFqan());
 
 		}
 
@@ -274,7 +314,5 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 		}
 		return super.transfer(sourceUrl, targetUrl);
 	}
-
-
 
 }

@@ -17,13 +17,13 @@
 
 package nz.org.nesi.goji.model.commands;
 
-import grith.jgrith.credential.Credential;
+import grisu.jcommons.utils.EndpointHelpers;
+import grith.jgrith.cred.Cred;
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;
 
 import org.apache.commons.lang.StringUtils;
-import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,10 +38,10 @@ public class Activate extends AbstractCommand {
 	}
 
 	public Activate(BaseTransferAPIClient client, String endpoint,
-			Credential cred, Integer lifetime_in_hours)
+			Cred cred, Integer lifetime_in_hours)
 					throws CommandException {
 
-		this(client, endpoint, cred.getMyProxyServer(), cred
+		this(client, endpoint, cred.getMyProxyHost(), cred
 				.getMyProxyUsername(), cred.getMyProxyPassword(),
 				lifetime_in_hours);
 
@@ -224,17 +224,17 @@ public class Activate extends AbstractCommand {
 		}
 	}
 
-	public void setCredential(Credential c) {
+	public void setCredential(Cred c) {
 		setCredential(c, 12);
 	}
 
-	public void setCredential(Credential c, int lifetimeInHours) {
+	public void setCredential(Cred c, int lifetimeInHours) {
 
 		if (c == null) {
 			return;
 		}
 
-		setMyProxyHost(c.getMyProxyServer());
+		setMyProxyHost(c.getMyProxyHost());
 		setMyProxyUsername(c.getMyProxyUsername());
 		setMyProxyPassword(c.getMyProxyPassword());
 		setProxyLifetimeInHours(lifetimeInHours);

@@ -16,12 +16,13 @@
  */
 package nz.org.nesi.goji.model;
 
+import grisu.jcommons.utils.EndpointHelpers;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
 import org.apache.commons.lang.StringUtils;
-import org.bestgrid.goji.utils.EndpointHelpers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

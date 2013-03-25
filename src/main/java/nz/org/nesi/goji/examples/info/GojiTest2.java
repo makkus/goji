@@ -1,7 +1,6 @@
 package nz.org.nesi.goji.examples.info;
 
-import grisu.info.ynfo.YnfoManager;
-import grisu.jcommons.interfaces.InfoManager;
+import grisu.grin.YnfoManager;
 import grisu.jcommons.model.info.Directory;
 import nz.org.nesi.goji.control.UserEnvironment;
 import nz.org.nesi.goji.exceptions.UserException;
@@ -18,13 +17,12 @@ public class GojiTest2 {
 
 		UserEnvironment user = null;
 
-		InfoManager im = new YnfoManager(
-				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+		YnfoManager im = new YnfoManager("nesi");
 
 		if ((args.length > 0) && StringUtils.isNotBlank(args[0])) {
-			user = new UserEnvironment("nz", args[0].toCharArray(), im);
+			user = new UserEnvironment("markus", args[0].toCharArray(), im.getGrid());
 		} else {
-			user = new UserEnvironment("nz", im);
+			user = new UserEnvironment("markus", im.getGrid());
 		}
 
 		// for (String ep : user.getAllEndpoints().keySet()) {
@@ -32,7 +30,7 @@ public class GojiTest2 {
 		// }
 
 		for (Directory d : user.getDirectories()) {
-			System.out.println(d.getUrl());
+			System.out.println(d.toUrl());
 		}
 
 		System.out

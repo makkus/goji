@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -140,6 +141,23 @@ public abstract class AbstractCommand {
 				new ImmutableMap.Builder<PARAM, String>().put(inputKey1,
 						input1).put(inputKey2, input2).build());
 	}
+	
+	private BaseTransferAPIClient getClient() {
+//		BaseTransferAPIClient temp;
+//		try {
+//			temp = new JSONTransferAPIClient("markus",
+//					"/home/markus/.globus/certificates/gd_bundle.crt",
+//					"/home/markus/.grid/grid.proxy", "/home/markus/.grid/grid.proxy",
+//					Goji.DEFAULT_BASE_URL);
+//			return temp;
+//		} catch (KeyManagementException e) {
+//			e.printStackTrace();
+//		} catch (NoSuchAlgorithmException e) {
+//			e.printStackTrace();
+//		}
+//		throw new RuntimeException("Can't create client.");
+		return this.client;
+	}
 
 	public void execute() throws CommandException {
 
@@ -163,12 +181,13 @@ public abstract class AbstractCommand {
 		}
 		myLogger.debug("Executing GO command: " + name + " using path: "
 				+ getPath());
+		HttpsURLConnection c = null;
 		try {
 			String m = this.getMethodType().toString();
 			String path = this.getPath();
 			String json = getJsonData();
 
-			HttpsURLConnection c = client.request(m, path, json, null);
+			c = getClient().request(m, path, json, null);
 			myLogger.debug("Executed GO command: " + name);
 			setResult(c);
 			failed = false;
@@ -190,6 +209,10 @@ public abstract class AbstractCommand {
 			throw new CommandException("Could not execute command: "
 					+ e.getLocalizedMessage(), e);
 
+		} finally {
+			if ( c != null) {
+				c.disconnect();
+			}
 		}
 
 	}

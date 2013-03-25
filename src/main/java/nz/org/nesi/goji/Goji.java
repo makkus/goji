@@ -1,14 +1,16 @@
 package nz.org.nesi.goji;
 
-import grisu.info.ynfo.YnfoManager;
-import grisu.jcommons.interfaces.InfoManager;
+import grisu.grin.YnfoManager;
+import grisu.grin.model.Grid;
 import grisu.jcommons.model.info.Directory;
-import grith.jgrith.credential.Credential;
-import grith.jgrith.credential.ProxyCredential;
+import grisu.jcommons.model.info.Group;
+import grith.jgrith.cred.Cred;
+import grith.jgrith.cred.ProxyCred;
 import grith.jgrith.plainProxy.LocalProxy;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 import java.util.Set;
 
 import nz.org.nesi.goji.model.Endpoint;
@@ -17,6 +19,8 @@ import nz.org.nesi.goji.model.commands.EndpointRemove;
 
 import org.globusonline.transfer.BCTransferAPIClient;
 import org.globusonline.transfer.BaseTransferAPIClient;
+
+import com.google.common.collect.Sets;
 
 public class Goji {
 
@@ -31,12 +35,14 @@ public class Goji {
 	public static void main(String[] args) throws KeyManagementException,
 	NoSuchAlgorithmException, Exception {
 
-		InfoManager im = new YnfoManager(
+		YnfoManager im = new YnfoManager(
 				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+		
+		Grid grid = im.getGrid();
 
 		String go_username = "nz";
 
-		Credential c = new ProxyCredential();
+		Cred c = new ProxyCred();
 
 
 		// BaseTransferAPIClient client = new GssJSONTransferAPIClient(
@@ -84,12 +90,17 @@ public class Goji {
 
 		}
 
-		String[] fqans = new String[] { "/nz/nesi", "/nz/test" };
+		Set<Group> groups = Sets.newTreeSet();
+		
+		groups.add(grid.getGroup("/nz/nesi"));
+		//groups.add(grid.getGroup("/nz/nesi"));
+		
 
-		for (String fqan : fqans) {
-			System.out.println(fqan + "\n=====\n");
+		for (Group group : groups) {
+			System.out.println(group.toString() + "\n=====\n");
 
-			Set<Directory> dirs = im.getDirectoriesForVO(fqan);
+
+			Collection<Directory> dirs = grid.getResources(Directory.class, group);
 
 			for (Directory d : dirs) {
 				System.out.println(d.toString());

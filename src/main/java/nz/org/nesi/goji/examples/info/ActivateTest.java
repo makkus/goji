@@ -1,9 +1,8 @@
 package nz.org.nesi.goji.examples.info;
 
-import grisu.info.ynfo.YnfoManager;
+import grisu.grin.YnfoManager;
 import grisu.jcommons.exceptions.CredentialException;
-import grisu.jcommons.interfaces.InfoManager;
-import grith.jgrith.credential.Credential;
+import grith.jgrith.cred.Cred;
 
 import java.util.Map;
 
@@ -28,13 +27,13 @@ public class ActivateTest {
 
 		UserEnvironment user = null;
 
-		InfoManager im = new YnfoManager(
-				"/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+		YnfoManager im = new YnfoManager("nesi");
+		
 
 		if ((args.length > 0) && StringUtils.isNotBlank(args[0])) {
-			user = new UserEnvironment("nz", args[0].toCharArray(), im);
+			user = new UserEnvironment("nz", args[0].toCharArray(), im.getGrid());
 		} else {
-			user = new UserEnvironment("nz", im);
+			user = new UserEnvironment("nz", im.getGrid());
 		}
 
 		// user.removeAllEndpoints();
@@ -47,7 +46,7 @@ public class ActivateTest {
 			System.out.println(ep);
 		}
 
-		Credential cred = user.getCredential("/ARCS/BeSTGRID");
+		Cred cred = user.getCredential("/ARCS/BeSTGRID");
 
 		String username = cred.getMyProxyUsername();
 		char[] password = cred.getMyProxyPassword();

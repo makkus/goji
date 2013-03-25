@@ -17,14 +17,18 @@
 package nz.org.nesi.goji.model.commands;
 
 import grisu.jcommons.model.info.GFile;
+import grisu.jcommons.utils.EndpointHelpers;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Map;
 import java.util.SortedSet;
+
+import javax.management.RuntimeErrorException;
 
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
-import org.bestgrid.goji.utils.EndpointHelpers;
 import org.globusonline.transfer.BCTransferAPIClient;
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
@@ -76,10 +80,14 @@ public class LsCommand extends AbstractCommand {
 
 	@Override
 	public String getPath() {
-		return "/endpoint/"
-				+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
-				+ "/ls?path="
-				+ getConfig(PARAM.PATH);
+		try {
+			return "/endpoint/"
+					+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
+					+ "/ls?path="
+					+ URLEncoder.encode(getConfig(PARAM.PATH), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
