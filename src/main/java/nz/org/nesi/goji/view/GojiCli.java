@@ -2,6 +2,7 @@ package nz.org.nesi.goji.view;
 
 import grisu.jcommons.interfaces.GrinformationManagerDozer;
 import grisu.jcommons.interfaces.InformationManager;
+import grisu.jcommons.utils.EnvironmentVariableHelpers;
 import grisu.jcommons.utils.OutputHelpers;
 import grisu.model.info.dto.Directory;
 import grith.gridsession.GridClient;
@@ -44,6 +45,8 @@ public class GojiCli extends GridClient {
 	public static final String LIST = "list";
 
 	public static void main(String[] args) throws Exception {
+
+		EnvironmentVariableHelpers.loadEnvironmentVariablesToSystemProperties();
 
 		Environment.initEnvironment();
 
