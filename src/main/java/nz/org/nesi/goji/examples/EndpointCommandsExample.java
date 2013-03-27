@@ -13,36 +13,34 @@ public class EndpointCommandsExample {
 	 * @throws CommandException
 	 */
 	public static void main(String[] args) throws CredentialException,
-	CommandException {
+			CommandException {
 
 		String go_user = "nz";
 
 		GlobusOnlineSession session = new GlobusOnlineSession(go_user);
-
 
 		System.out.println("List of endpoints:");
 		for (Endpoint e : session.getAllEndpoints()) {
 			System.out.println(e.getName());
 		}
 
-		for (Endpoint e : session.getAllUserEndpoints()) {
+		for (Endpoint e : session.getAllUserEndpoints(go_user)) {
 			System.out.println("User endpoint: " + e.getName());
 			System.out.println("Expires: " + e.getExpires());
 		}
 
 		System.out.println("Activating user endpoints...");
-		for (Endpoint e : session.getAllUserEndpoints()) {
+		for (Endpoint e : session.getAllUserEndpoints(go_user)) {
 			session.activateEndpoint(e.getName(), session.getCredential());
 		}
 		System.out.println("User endpoints activated.");
 
-		for (Endpoint e : session.getAllUserEndpoints()) {
+		for (Endpoint e : session.getAllUserEndpoints(go_user)) {
 			System.out.println("User endpoint: " + e.getName());
 			System.out.println("Expires: " + e.getExpires());
 			session.listDirectory(e.getName(), "/~/");
 
 		}
-
 
 	}
 }

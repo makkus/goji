@@ -2,6 +2,7 @@ package nz.org.nesi.goji.control;
 
 import grisu.jcommons.exceptions.CredentialException;
 import grisu.jcommons.model.info.GFile;
+import grisu.jcommons.utils.EndpointHelpers;
 import grisu.model.info.dto.Directory;
 import grisu.model.info.dto.FileSystem;
 import grisu.model.info.dto.Group;
@@ -16,6 +17,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import nz.org.nesi.goji.Goji;
 import nz.org.nesi.goji.exceptions.CommandException;
@@ -23,12 +27,17 @@ import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.Transfer;
 import nz.org.nesi.goji.model.commands.AbstractCommand;
 import nz.org.nesi.goji.model.commands.Activate;
+import nz.org.nesi.goji.model.commands.Deactivate;
 import nz.org.nesi.goji.model.commands.EndpointAdd;
 import nz.org.nesi.goji.model.commands.EndpointList;
 import nz.org.nesi.goji.model.commands.EndpointRemove;
 import nz.org.nesi.goji.model.commands.LsCommand;
 import nz.org.nesi.goji.model.commands.PARAM;
 import nz.org.nesi.goji.model.commands.TransferCommand;
+import nz.org.nesi.goji.model.events.EndpointActivatedEvent;
+import nz.org.nesi.goji.model.events.EndpointActivatingEvent;
+import nz.org.nesi.goji.model.events.EndpointDeactivatedEvent;
+import nz.org.nesi.goji.model.events.EndpointDeactivatingEvent;
 
 import org.apache.commons.lang.StringUtils;
 import org.globusonline.transfer.BaseTransferAPIClient;
@@ -39,7 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.Maps;
+import com.google.common.eventbus.EventBus;
 
 public class GlobusOnlineSession {
 
@@ -51,6 +60,8 @@ public class GlobusOnlineSession {
 	private final String go_url;
 
 	private Set<Endpoint> endpoints;
+
+	private final EventBus eventBus = new EventBus();
 
 	private Cred credential = null;
 
@@ -69,8 +80,10 @@ public class GlobusOnlineSession {
 		this(go_username, LocalProxy.PROXY_FILE);
 	}
 
-	public GlobusOnlineSession(String go_username, char[] certPassphrase) throws CredentialException {
-		this(go_username, X509Cred.create(certPassphrase), Goji.DEFAULT_BASE_URL);
+	public GlobusOnlineSession(String go_username, char[] certPassphrase)
+			throws CredentialException {
+		this(go_username, X509Cred.create(certPassphrase),
+				Goji.DEFAULT_BASE_URL);
 	}
 
 	/**
@@ -86,7 +99,8 @@ public class GlobusOnlineSession {
 	 * @throws CredentialException
 	 *             if MyProxy delegation of credential fails
 	 */
-	public GlobusOnlineSession(String go_username, Cred cred) throws CredentialException {
+	public GlobusOnlineSession(String go_username, Cred cred)
+			throws CredentialException {
 		this(go_username, cred, null);
 	}
 
@@ -98,6 +112,8 @@ public class GlobusOnlineSession {
 	 * 
 	 * @param go_username
 	 *            the GlobusOnline username
+	 * @param endpoint_username
+	 *            the username of the user maintaining the endpoints
 	 * @param cred
 	 *            the credential to use for this GO session
 	 * @param go_url
@@ -105,8 +121,9 @@ public class GlobusOnlineSession {
 	 * @throws CredentialException
 	 *             if MyProxy delegation of credential fails
 	 */
-	public GlobusOnlineSession(String go_username, Cred cred,
-			String go_url) throws CredentialException {
+	public GlobusOnlineSession(String go_username, Cred cred, String go_url)
+			throws CredentialException {
+
 		this.go_username = go_username;
 		if (StringUtils.isBlank(go_url)) {
 			this.go_url = Goji.DEFAULT_BASE_URL;
@@ -122,8 +139,8 @@ public class GlobusOnlineSession {
 		try {
 			client = new JSONTransferAPIClient(go_username,
 					System.getProperty("user.home") + File.separator
-					+ ".globus" + File.separator + "certificates"
-					+ File.separator + "gd_bundle.crt",
+							+ ".globus" + File.separator + "certificates"
+							+ File.separator + "gd_bundle.crt",
 					cred.getProxyPath(), cred.getProxyPath(),
 					Goji.DEFAULT_BASE_URL);
 			client.setUseMultiThreaded(true);
@@ -146,6 +163,14 @@ public class GlobusOnlineSession {
 		// retrieving endpoints in background
 		loadEndpoints(false);
 
+	}
+
+	public void registerForEvents(Object subscriber) {
+		eventBus.register(subscriber);
+	}
+
+	public void deregisterForEvents(Object subscriber) {
+		eventBus.unregister(subscriber);
 	}
 
 	/**
@@ -192,6 +217,77 @@ public class GlobusOnlineSession {
 	// loadEndpoints(false);
 	// }
 
+	public void activateEndpoints(final String endpoint_username,
+			final Collection<Directory> eps, final boolean forceReactivate,
+			boolean waitToFinish) throws CommandException {
+
+		if (eps.size() == 0) {
+			return;
+		}
+
+		ExecutorService executor = Executors.newFixedThreadPool(eps.size());
+
+		for (final Directory ep : eps) {
+
+			Thread t = new Thread() {
+				@Override
+				public void run() {
+					try {
+						activateEndpoint(endpoint_username, ep, forceReactivate);
+					} catch (CommandException e) {
+						e.printStackTrace();
+					}
+				}
+			};
+			executor.execute(t);
+		}
+
+		executor.shutdown();
+
+		if (waitToFinish) {
+			try {
+				executor.awaitTermination(10, TimeUnit.MINUTES);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void deactivateEndpoints(final Collection<String> eps,
+			boolean waitToFinish) {
+
+		if (eps.size() == 0) {
+			return;
+		}
+
+		ExecutorService executor = Executors.newFixedThreadPool(eps.size());
+
+		for (final String ep : eps) {
+
+			Thread t = new Thread() {
+				@Override
+				public void run() {
+					try {
+						deactivateEndpoint(ep);
+					} catch (CommandException e) {
+						e.printStackTrace();
+					}
+				}
+			};
+			executor.execute(t);
+		}
+
+		executor.shutdown();
+
+		if (waitToFinish) {
+			try {
+				executor.awaitTermination(10, TimeUnit.MINUTES);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	/**
 	 * Activates the endpoint that is responsible for the provided Directory.
 	 * 
@@ -206,28 +302,63 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint could not be activated
 	 */
-	public void activateEndpoint(final Directory d, final boolean forceReactivate) throws CommandException {
-		
-		Collection<Group> groups = d.getGroups();
-		final Set<String> avail_groups = getCredential().getAvailableFqans().keySet();
-		
-		Collection<Group> intersection = Collections2.filter(groups, new Predicate<Group>() {
+	public void activateEndpoint(final String endpoint_username,
+			final Directory d, final boolean forceReactivate)
+			throws CommandException {
 
-			public boolean apply(Group input) {
-				String fqan = input.getFqan();
-				if ( avail_groups.contains(fqan) ) {
-					return true;
-				} else {
-					return false;
-				}
-			}
-		});
-		
-		if ( intersection.size() == 0 ) {
-			throw new CommandException("No group available to activate endpoint:"+d.getAlias());
+		Collection<Group> groups = d.getGroups();
+		final Set<String> avail_groups = getCredential().getAvailableFqans()
+				.keySet();
+
+		Collection<Group> intersection = Collections2.filter(groups,
+				new Predicate<Group>() {
+
+					public boolean apply(Group input) {
+						String fqan = input.getFqan();
+						if (avail_groups.contains(fqan)) {
+							return true;
+						} else {
+							return false;
+						}
+					}
+				});
+
+		if (intersection.size() == 0) {
+			throw new CommandException(
+					"No group available to activate endpoint:" + d.getAlias());
 		}
-		
-		activateEndpoint(getEndpointName(d), intersection.iterator().next().toString(), forceReactivate);
+
+		activateEndpoint(endpoint_username + "#" + d.getAlias(), intersection
+				.iterator().next().toString(), forceReactivate);
+
+	}
+
+	/**
+	 * Dectivates the endpoint that is responsible for the provided Directory.
+	 * 
+	 * 
+	 * @param d
+	 *            the directory
+	 * @throws CommandException
+	 *             if the endpoint could not be activated
+	 */
+	public void deactivateEndpoint(final String endpoint)
+			throws CommandException {
+
+		EndpointDeactivatingEvent ev1 = new EndpointDeactivatingEvent(endpoint);
+		eventBus.post(ev1);
+
+		Deactivate d = newCommand(Deactivate.class);
+		d.setEndpoint(endpoint);
+
+		d.execute();
+
+		// endpoint list needs to be refreshed now
+		invalidateEndpoints();
+
+		EndpointDeactivatedEvent ev2 = new EndpointDeactivatedEvent(endpoint,
+				ev1);
+		eventBus.post(ev2);
 
 	}
 
@@ -241,8 +372,7 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint can't be activated
 	 */
-	public void activateEndpoint(String ep, Cred cred)
-			throws CommandException {
+	public void activateEndpoint(String ep, Cred cred) throws CommandException {
 		activateEndpoint(ep, cred, false);
 	}
 
@@ -260,18 +390,18 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint can't be activated for some reason
 	 */
-	public void activateEndpoint(String ep, Cred cred,
-			boolean forceReactivate)
-					throws CommandException {
+	public void activateEndpoint(String ep, Cred cred, boolean forceReactivate)
+			throws CommandException {
 
 		synchronized (ep) {
-		if (forceReactivate || !isActivated(ep)) {
-			activateOrReactivateEndpoint(ep, cred);
-			loadEndpoints(true);
-			return;
-		} else {
-			return;
-		}
+
+			if (forceReactivate || !isActivated(ep)) {
+				activateOrReactivateEndpoint(ep, cred);
+				loadEndpoints(true);
+				return;
+			} else {
+				return;
+			}
 		}
 	}
 
@@ -313,6 +443,10 @@ public class GlobusOnlineSession {
 	 */
 	public void activateOrReactivateEndpoint(String ep, Cred cred)
 			throws CommandException {
+
+		EndpointActivatingEvent ev1 = new EndpointActivatingEvent(ep);
+		eventBus.post(ev1);
+
 		Activate a = newCommand(Activate.class);
 		a.setEndpoint(ep);
 		a.setCredential(cred);
@@ -322,8 +456,12 @@ public class GlobusOnlineSession {
 			cred.uploadMyProxy();
 		}
 		a.execute();
+
 		// endpoint list needs to be refreshed now
 		invalidateEndpoints();
+
+		EndpointActivatedEvent ev2 = new EndpointActivatedEvent(ep, ev1);
+		eventBus.post(ev2);
 	}
 
 	/**
@@ -358,8 +496,7 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoint could not be created
 	 */
-	public void addEndpoint(Directory d)
-			throws CommandException {
+	public void addEndpoint(Directory d) throws CommandException {
 		addEndpoint(d.getFilesystem(), d.getAlias());
 	}
 
@@ -371,7 +508,8 @@ public class GlobusOnlineSession {
 	 *            the gridftp filesystem for the endpoint
 	 * @param fqan
 	 *            the group that is used to access this endpoint
-	 *            @param myProxyHost the MyProxy host to be used with this endpoint
+	 * @param myProxyHost
+	 *            the MyProxy host to be used with this endpoint
 	 * @throws CommandException
 	 *             if the endpoint can't be created or the group is not
 	 *             available for the user
@@ -410,7 +548,6 @@ public class GlobusOnlineSession {
 	public void addEndpoint(String host, String epName, String myProxyHost)
 			throws CommandException {
 
-
 		myLogger.debug("Adding endpoint for: " + epName);
 
 		EndpointAdd ea = newCommand(EndpointAdd.class);
@@ -436,8 +573,7 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 */
 	protected AbstractCommand execute(Class commandClass,
-			Map<PARAM, String> config)
-					throws CommandException {
+			Map<PARAM, String> config) throws CommandException {
 		AbstractCommand c = newCommand(commandClass, config);
 		c.execute();
 		return c;
@@ -471,12 +607,15 @@ public class GlobusOnlineSession {
 	 * 
 	 * Doesn't refresh the endpoint list if it is already loaded.
 	 * 
+	 * @param user
+	 *            the username
 	 * @return the users' endpoints
 	 * @throws CommandException
 	 *             if the endpoints can't be retrieved
 	 */
-	public Set<Endpoint> getAllUserEndpoints() throws CommandException {
-		return getAllUserEndpoints(false);
+	public Set<Endpoint> getAllUserEndpoints(String user)
+			throws CommandException {
+		return getAllUserEndpoints(user, false);
 	}
 
 	/**
@@ -490,14 +629,14 @@ public class GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if the endpoints can't be retrieved
 	 */
-	public Set<Endpoint> getAllUserEndpoints(boolean forceRefresh)
+	public Set<Endpoint> getAllUserEndpoints(String user, boolean forceRefresh)
 			throws CommandException {
 
 		Set<Endpoint> result = Sets.newTreeSet();
 
 		for (Endpoint e : getAllEndpoints(forceRefresh)) {
 
-			if (this.go_username.equals(e.getUsername())) {
+			if (user.equals(e.getUsername())) {
 				result.add(e);
 			}
 		}
@@ -513,18 +652,34 @@ public class GlobusOnlineSession {
 		return this.credential;
 	}
 
+	// protected String getEndpointName(FileSystem fs, String fqan) {
+	// return EndpointHelpers.translateIntoEndpointName(fs.getAlias(), fqan);
+	// }
 
-	protected String getEndpointName(Directory d) {
-		//return getEndpointName(d.getFilesystem(), d.getAlias());
-		return d.getAlias();
+	public Endpoint getEndpoint(String name) throws CommandException {
+		return getEndpoint(name, false);
 	}
 
-//	protected String getEndpointName(FileSystem fs, String fqan) {
-//		return EndpointHelpers.translateIntoEndpointName(fs.getAlias(), fqan);
-//	}
+	public Endpoint getEndpoint(String name, boolean refresh)
+			throws CommandException {
+
+		String username = EndpointHelpers.extractUsername(name);
+		String epName = EndpointHelpers.extractEndpointName(name);
+
+		for (Endpoint ep : getAllEndpoints(refresh)) {
+			if (ep.getUsername().equals(username)
+					&& ep.getName().equals(epName)) {
+				return ep;
+			}
+		}
+		return null;
+	}
 
 	/**
-	 * Get all fqans (groups) that are available to the user when using the default session credential and the system-configured VOs (vomses files in ~/.glite/vomses)
+	 * Get all fqans (groups) that are available to the user when using the
+	 * default session credential and the system-configured VOs (vomses files in
+	 * ~/.glite/vomses)
+	 * 
 	 * @return
 	 */
 	public Set<String> getFqans() {
@@ -532,14 +687,14 @@ public class GlobusOnlineSession {
 		return credential.getAvailableFqans().keySet();
 	}
 
-	/**
-	 * The GlobusOnline username for this session.
-	 * 
-	 * @return the username
-	 */
-	public String getGlobusOnlineUsername() {
-		return this.go_username;
-	}
+	// /**
+	// * The GlobusOnline username for this session.
+	// *
+	// * @return the username
+	// */
+	// public String getGlobusOnlineUsername() {
+	// return this.go_username;
+	// }
 
 	/**
 	 * Retrieves a transfer info from GlobusOnline and creates a Transfer object
@@ -570,7 +725,7 @@ public class GlobusOnlineSession {
 	 */
 	public boolean isActivated(String ep) throws CommandException {
 
-		for (Endpoint e : getAllEndpoints(false) ) {
+		for (Endpoint e : getAllEndpoints(false)) {
 
 			if (e.equals(ep)) {
 				return e.isActivated();
@@ -662,11 +817,11 @@ public class GlobusOnlineSession {
 
 	}
 
-	public void removeAllEndpoints() throws CommandException {
+	public void removeAllEndpoints(String user) throws CommandException {
 
-		Set<Endpoint> endpoints = getAllUserEndpoints(true);
+		Set<Endpoint> endpoints = getAllUserEndpoints(user, true);
 		for (Endpoint ep : endpoints) {
-			removeEndpoint(ep.getName());
+			removeEndpoint(user + "#" + ep.getName());
 		}
 
 	}
@@ -674,7 +829,6 @@ public class GlobusOnlineSession {
 	public void removeEndpoint(Directory d) throws CommandException {
 		removeEndpoint(d.getAlias());
 	}
-
 
 	public void removeEndpoint(String endpointname) throws CommandException {
 
@@ -702,7 +856,6 @@ public class GlobusOnlineSession {
 
 		TransferCommand t = newCommand(TransferCommand.class);
 		t.addTransfer(sourceUrl, targetUrl);
-
 
 		t.execute();
 

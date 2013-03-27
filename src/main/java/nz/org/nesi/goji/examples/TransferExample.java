@@ -13,7 +13,7 @@ public class TransferExample {
 	public static void main(String[] args) throws Exception {
 
 		// your globus online username
-		String go_user = "nz";
+		String go_user = "markus";
 
 		// creating the session
 		Cred cred = X509Cred.create(args[0].toCharArray());

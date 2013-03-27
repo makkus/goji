@@ -20,7 +20,6 @@ import nz.org.nesi.goji.model.Endpoint;
 
 import org.apache.commons.lang3.StringUtils;
 
-
 public class GojiTest {
 
 	/**
@@ -28,9 +27,8 @@ public class GojiTest {
 	 * @throws UserException
 	 */
 	public static void main(String[] args) throws Exception {
-		
-		Environment.initEnvironment();
 
+		Environment.initEnvironment();
 
 		// Credential c = new Credential();
 
@@ -38,17 +36,19 @@ public class GojiTest {
 		// go_username, trustedCAFile, c.getCredential(),
 		// Goji.DEFAULT_BASE_URL);
 
-		//		 InfoManager im = new YnfoManager(
-		//		 "/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
-		
-		InformationManager informationManager = new GrinformationManagerDozer("/data/src/config/nesi-grid-info/nesi_info.groovy");
+		// InfoManager im = new YnfoManager(
+		// "/home/markus/src/infosystems/ynfo/src/test/resources/default_config.groovy");
+
+		InformationManager informationManager = new GrinformationManagerDozer(
+				"/data/src/config/nesi-grid-info/nesi_info.groovy");
 
 		// Credential c = new Credential("markus", "nixenixe25".toCharArray(),
 		// "myproxy.arcs.org.au", 7512);
 
 		Cred c = MyProxyCred.loadFromDefault();
 
-		final GlobusOnlineUserSession session = new GlobusOnlineUserSession("markus", c, informationManager);
+		final GlobusOnlineUserSession session = new GlobusOnlineUserSession(
+				"markus", "markus", c, informationManager);
 
 		// if ((args.length == 1) && StringUtils.isNotBlank(args[0])) {
 		// session = new GlobusOnlineUserSession("nz", args[0].toCharArray(),
@@ -60,10 +60,9 @@ public class GojiTest {
 		System.out.println("All available VOs:");
 		System.out.println(StringUtils.join(session.getFqans(), "\n"));
 
-//		session.removeAllEndpoints();
+		session.removeAllEndpoints();
+		System.exit(0);
 		session.createAllEndpoints();
-		
-//		System.exit(0);
 
 		for (Endpoint ep : session.getAllUserEndpoints()) {
 
@@ -71,39 +70,41 @@ public class GojiTest {
 					+ ep.getHostname());
 		}
 
-//		long start = new Date().getTime();
-//		session.activateAllEndpoints();
-//		long end = new Date().getTime();	
-//		System.out.println("Time to activate endpoints: "+(end-start)/1000+" seconds");
+		// long start = new Date().getTime();
+		// session.activateAllEndpoints();
+		// long end = new Date().getTime();
+		// System.out.println("Time to activate endpoints: "+(end-start)/1000+" seconds");
 		int threads = 20;
-//		ExecutorService executor = Executors.newFixedThreadPool(session.getDirectories().size());
+		// ExecutorService executor =
+		// Executors.newFixedThreadPool(session.getDirectories().size());
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
-		
-		
+
 		for (final Directory d : session.getDirectories()) {
 			Thread t = new Thread() {
+				@Override
 				public void run() {
 					try {
-//						session.getAllEndpoints(true);
+						// session.getAllEndpoints(true);
 						System.out.println("Started");
-						session.activateEndpoint(d, false);
-						SortedSet<GFile> files = session.listDirectory(d.getAlias(), d.getPath());
+						session.activateEndpoint("nz", d, false);
+						SortedSet<GFile> files = session.listDirectory(
+								d.getAlias(), d.getPath());
 						System.out.println("Finished");
-						for ( GFile f : files ) {
-							System.out.println("FILE: "+f.toString());
+						for (GFile f : files) {
+							System.out.println("FILE: " + f.toString());
 						}
-						System.out.println("Listed "+d.getAlias());
+						System.out.println("Listed " + d.getAlias());
 					} catch (CommandException e) {
 
-						System.err.println("ERROR: "+e.getLocalizedMessage());
+						System.err.println("ERROR: " + e.getLocalizedMessage());
 					}
 				}
 			};
 			executor.execute(t);
 		}
-		
+
 		executor.shutdown();
-		
+
 		try {
 			executor.awaitTermination(10, TimeUnit.HOURS);
 		} catch (InterruptedException e) {

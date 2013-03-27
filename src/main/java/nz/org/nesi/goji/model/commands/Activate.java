@@ -37,12 +37,11 @@ public class Activate extends AbstractCommand {
 		super(client);
 	}
 
-	public Activate(BaseTransferAPIClient client, String endpoint,
-			Cred cred, Integer lifetime_in_hours)
-					throws CommandException {
+	public Activate(BaseTransferAPIClient client, String endpoint, Cred cred,
+			Integer lifetime_in_hours) throws CommandException {
 
-		this(client, endpoint, cred.getMyProxyHost(), cred
-				.getMyProxyUsername(), cred.getMyProxyPassword(),
+		this(client, endpoint, cred.getMyProxyHost(),
+				cred.getMyProxyUsername(), cred.getMyProxyPassword(),
 				lifetime_in_hours);
 
 	}
@@ -50,7 +49,7 @@ public class Activate extends AbstractCommand {
 	public Activate(BaseTransferAPIClient client, String endpoint,
 			String myproxyServer, String myproxyUsername,
 			char[] myproxyPassword, Integer lifetime_in_hours)
-					throws CommandException {
+			throws CommandException {
 
 		super(client, new ImmutableMap.Builder<PARAM, String>()
 				.put(PARAM.ENDPOINT_NAME, endpoint)
@@ -58,8 +57,7 @@ public class Activate extends AbstractCommand {
 				.put(PARAM.MYPROXY_USERNAME, myproxyUsername)
 				.put(PARAM.MYPROXY_PASSWORD, new String(myproxyPassword))
 				.put(PARAM.PROXY_LIFETIME_IN_HOURS,
-						lifetime_in_hours.toString())
-						.build());
+						lifetime_in_hours.toString()).build());
 	}
 
 	private void activate(JSONArray arResult, String myProxyServer,

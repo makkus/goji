@@ -37,10 +37,10 @@ public class Endpoint implements Comparable {
 	private int port;
 
 	private String canonical_name, username, description, myproxy_server,
-	activated, name;
+			activated, name;
 
 	private String expire_time, is_public, ls_link, scheme, subject, hostname,
-	uri;
+			uri;
 
 	private String hosts, subjects, status;
 
@@ -53,7 +53,7 @@ public class Endpoint implements Comparable {
 	}
 
 	public int compareTo(Object arg0) {
-		if ( arg0 instanceof Endpoint ) {
+		if (arg0 instanceof Endpoint) {
 			Endpoint o = (Endpoint) arg0;
 			int i = getUsername().compareTo(o.getUsername());
 			if (i == 0) {
@@ -65,8 +65,6 @@ public class Endpoint implements Comparable {
 			return -1;
 		}
 	}
-
-
 
 	public void createFromJSON(JSONObject jobj, String username)
 			throws Exception {
@@ -152,9 +150,10 @@ public class Endpoint implements Comparable {
 	@Override
 	public boolean equals(Object o) {
 
-		if ( o instanceof Endpoint ) {
-			Endpoint other = (Endpoint)o;
-			if ( getUsername().equals(((Endpoint) o).getUsername()) && getName().equals(other.getName()) ) {
+		if (o instanceof Endpoint) {
+			Endpoint other = (Endpoint) o;
+			if (getUsername().equals(((Endpoint) o).getUsername())
+					&& getName().equals(other.getName())) {
 				return true;
 			}
 		} else if (o instanceof String) {
@@ -221,5 +220,9 @@ public class Endpoint implements Comparable {
 		strbuf.append("\n");
 		// }
 		return strbuf.toString();
+	}
+
+	public String getFullName() {
+		return getUsername() + "#" + getName();
 	}
 }

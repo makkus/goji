@@ -39,11 +39,9 @@ public class EndpointList extends AbstractCommand {
 		}
 	}
 
-
 	public Map<String, Endpoint> getEndpoints() {
 		return endpoints;
 	}
-
 
 	@Override
 	protected PARAM[] getInputParameters() {
@@ -63,17 +61,17 @@ public class EndpointList extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getOptionalParameters() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
 	protected PARAM[] getOutputParamets() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
 	public String getPath() {
-		return "/endpoint_list?limit=100";
+		return "/endpoint_list?limit=1000";
 	}
 
 	@Override

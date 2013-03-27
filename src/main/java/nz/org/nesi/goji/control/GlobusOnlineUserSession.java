@@ -1,9 +1,7 @@
 package nz.org.nesi.goji.control;
 
-import grisu.grin.model.Grid;
 import grisu.grin.model.InfoManager;
 import grisu.jcommons.exceptions.CredentialException;
-import grisu.jcommons.interfaces.GrinformationManagerDozer;
 import grisu.jcommons.interfaces.InformationManager;
 import grisu.jcommons.utils.EndpointHelpers;
 import grisu.model.info.dto.Directory;
@@ -11,11 +9,9 @@ import grisu.model.info.dto.FileSystem;
 import grith.jgrith.cred.Cred;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import nz.org.nesi.goji.GlobusOnlineConstants;
 import nz.org.nesi.goji.exceptions.CommandException;
@@ -26,10 +22,10 @@ import nz.org.nesi.goji.model.Transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.collect.BiMap;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -39,12 +35,11 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 			.getLogger(GlobusOnlineUserSession.class.getName());
 
 	public final InformationManager informationManager;
-	
+
 	private final String endpoint_username;
 
 	private final Set<Directory> directories = Sets.newTreeSet();
 
-	private final BiMap<String, String> alias_map = HashBiMap.create();
 	private final Map<FileSystem, Set<String>> filesystems = Maps.newTreeMap();
 
 	public GlobusOnlineUserSession(String go_username, char[] certPassphrase,
@@ -58,13 +53,14 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 		init();
 	}
 
-	public GlobusOnlineUserSession(String go_username, Cred cred, InformationManager im)
+	public GlobusOnlineUserSession(String go_username,
+			String endpoint_username, Cred cred, InformationManager im)
 			throws CredentialException {
 		super(go_username, cred, null);
 
 		this.informationManager = im;
 
-		this.endpoint_username = go_username;
+		this.endpoint_username = endpoint_username;
 
 		init();
 	}
@@ -105,8 +101,26 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	}
 
 	/**
+	 * Activates the specified endpoint with the provided credential.
+	 * 
+	 * @param ep
+	 *            the endpoint name
+	 * @param cred
+	 *            the credential
+	 * @throws CommandException
+	 *             if the endpoint can't be activated
+	 */
+	@Override
+	public void activateEndpoint(String ep, Cred cred) throws CommandException {
+		activateEndpoint(endpoint_username + "#" + ep, cred);
+	}
+
+	/**
 	 * Activates all endpoints configured in the InfoManger instance for this
 	 * session.
+	 * 
+	 * This one will not re-activate already activated endpoints, and it will
+	 * wait all endpoints to be activated before returning.
 	 * 
 	 * Note, the endpoints can only be activated with the default session
 	 * credential or a voms-enabled credential that is derived from it. The
@@ -116,36 +130,75 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	 * @throws CommandException
 	 *             if not all endpoints could be activated
 	 */
+
 	public void activateAllEndpoints() throws CommandException {
+		activateAllEndpoints(false, true);
+	}
 
-		ExecutorService executor = Executors.newFixedThreadPool(getDirectories().size());
-//		ExecutorService executor = Executors.newFixedThreadPool(1);
-		
-		for (final Directory d : getDirectories()) {
-			
-			Thread t = new Thread() {
-				public void run() {
-					try {
-						System.out.println("ACtivating: "+d.toString());
-						activateEndpoint(d, false);
-						System.out.println("ACtivated: "+d.toString());
-					} catch (CommandException e) {
-						e.printStackTrace();
+	public void activateAllEndpoints(boolean forceReactivate, boolean wait)
+			throws CommandException {
+
+		activateEndpoints(endpoint_username, getDirectories(), forceReactivate,
+				wait);
+
+	}
+
+	public String getEndpointUsername() {
+		return endpoint_username;
+	}
+
+	public void activateEndpointNames(final Collection<String> eps,
+			final boolean forceReactivate, boolean waitToFinish)
+			throws CommandException {
+
+		List<Directory> dirs = Lists.newArrayList();
+
+		for (String ep : eps) {
+			try {
+				dirs.add(getDirectory(ep));
+			} catch (FileSystemException e) {
+				throw new CommandException("Can't get directory for: " + ep);
+			}
+		}
+		activateEndpoints(endpoint_username, dirs, forceReactivate,
+				waitToFinish);
+	}
+
+	/**
+	 * Dectivates all endpoints configured in the InfoManger instance for this
+	 * session.
+	 * 
+	 * Note, the endpoints can only be activated with the default session
+	 * credential or a voms-enabled credential that is derived from it. The
+	 * voms-specific stuff is done automatically (i.e. the proper voms proxy
+	 * created for every Endpoint).
+	 * 
+	 * @param waitToFinish
+	 *            whether to wait for the deactivation to finish
+	 * @throws CommandException
+	 *             if not all endpoints could be activated
+	 */
+	public void deactivateAllEndpoints(boolean waitToFinish)
+			throws CommandException {
+
+		Collection<Directory> dirs = getDirectories();
+
+		Collection<String> temp = Collections2.transform(dirs,
+				new Function<Directory, String>() {
+
+					public String apply(Directory input) {
+						return endpoint_username + "#" + input.getAlias();
 					}
-				}
-			};
-			executor.execute(t);
-		}
-		
-		executor.shutdown();
-		
-		try {
-			executor.awaitTermination(10, TimeUnit.HOURS);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
+				});
+
+		deactivateEndpoints(temp, waitToFinish);
+
+	}
+
+	@Override
+	public Endpoint getEndpoint(String endpoint) throws CommandException {
+		return super.getEndpoint(endpoint_username + "#" + endpoint);
 	}
 
 	/**
@@ -164,29 +217,31 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	 */
 	public void createAllEndpoints() throws CommandException {
 
-		if (!endpoint_username.equals(getGlobusOnlineUsername())) {
-			throw new CommandException(
-					"Can't create endpoints because endpoint-username is different.");
-		}
+		// if
+		// (!endpoint_username.equals(getGlobusOnlineUsername(endpoint_username)))
+		// {
+		// throw new CommandException(
+		// "Can't create endpoints because endpoint-username is different.");
+		// }
 
-		Set<Endpoint> allEndpoints = getAllUserEndpoints(true);
+		Set<Endpoint> allEndpoints = getAllUserEndpoints(endpoint_username,
+				true);
 
 		for (Directory d : getDirectories()) {
 
+			String alias = d.getAlias();
 
-				String alias = d.getAlias();
-
-				boolean alreadyExists = false;
-				for (Endpoint ep : allEndpoints) {
-					if (ep.getName().equals(alias)) {
-						alreadyExists = true;
-						break;
-					}
+			boolean alreadyExists = false;
+			for (Endpoint ep : allEndpoints) {
+				if (ep.getName().equals(alias)) {
+					alreadyExists = true;
+					break;
 				}
+			}
 
-				if (!alreadyExists) {
-					addEndpoint(d);
-				}
+			if (!alreadyExists) {
+				addEndpoint(d);
+			}
 		}
 	}
 
@@ -202,6 +257,10 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 				+ Directory.getRelativePath(d, url);
 	}
 
+	public void removeAllEndpoints() throws CommandException {
+		removeAllEndpoints(endpoint_username);
+	}
+
 	public String ensureGsiftpUrl(String url) throws FileSystemException {
 
 		Directory d = getDirectory(url);
@@ -213,14 +272,29 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 		return Collections2.filter(directories, new Predicate<Directory>() {
 
 			public boolean apply(Directory d) {
-				String go_endpoint = Directory.getOption(d, GlobusOnlineConstants.DIRECTORY_IS_GLOBUS_ENDPOINT_KEY);
+				String go_endpoint = Directory.getOption(d,
+						GlobusOnlineConstants.DIRECTORY_IS_GLOBUS_ENDPOINT_KEY);
 
-				boolean result =  Boolean.parseBoolean(go_endpoint);
-				
+				boolean result = Boolean.parseBoolean(go_endpoint);
+
 				return result;
 			}
 		});
 
+	}
+
+	/**
+	 * Gets all of the endpoints that are owned by the endpoint user specified
+	 * when creating this object.
+	 * 
+	 * Doesn't refresh the endpoint list if it is already loaded.
+	 * 
+	 * @return the endpoints
+	 * @throws CommandException
+	 *             if the endpoints can't be retrieved
+	 */
+	public Set<Endpoint> getAllUserEndpoints() throws CommandException {
+		return getAllUserEndpoints(endpoint_username, false);
 	}
 
 	/**
