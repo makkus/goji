@@ -86,7 +86,7 @@ public class GojiTest {
 					try {
 						// session.getAllEndpoints(true);
 						System.out.println("Started");
-						session.activateEndpoint("nz", d, false);
+						session.activateEndpoint("nz", d, false, true);
 						SortedSet<GFile> files = session.listDirectory(
 								d.getAlias(), d.getPath());
 						System.out.println("Finished");

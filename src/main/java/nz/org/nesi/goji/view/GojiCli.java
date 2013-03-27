@@ -191,7 +191,7 @@ public class GojiCli extends GridClient {
 		Collection<Directory> endpoints = getRequestedDirectories(activateParameters
 				.getEndpoints());
 
-		session.activateAllEndpoints(false, waitToFinish);
+		session.activateAllEndpoints(false, waitToFinish, false);
 
 		System.out.println("Endpoints activated");
 

@@ -132,14 +132,14 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	 */
 
 	public void activateAllEndpoints() throws CommandException {
-		activateAllEndpoints(false, true);
+		activateAllEndpoints(false, true, false);
 	}
 
-	public void activateAllEndpoints(boolean forceReactivate, boolean wait)
-			throws CommandException {
+	public void activateAllEndpoints(boolean forceReactivate, boolean wait,
+			boolean reloadEndpoints) throws CommandException {
 
 		activateEndpoints(endpoint_username, getDirectories(), forceReactivate,
-				wait);
+				wait, reloadEndpoints);
 
 	}
 
@@ -148,8 +148,8 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	}
 
 	public void activateEndpointNames(final Collection<String> eps,
-			final boolean forceReactivate, boolean waitToFinish)
-			throws CommandException {
+			final boolean forceReactivate, boolean waitToFinish,
+			boolean reloadEndpoints) throws CommandException {
 
 		List<Directory> dirs = Lists.newArrayList();
 
@@ -161,7 +161,7 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 			}
 		}
 		activateEndpoints(endpoint_username, dirs, forceReactivate,
-				waitToFinish);
+				waitToFinish, reloadEndpoints);
 	}
 
 	/**

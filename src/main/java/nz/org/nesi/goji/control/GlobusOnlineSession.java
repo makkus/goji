@@ -219,7 +219,8 @@ public class GlobusOnlineSession {
 
 	public void activateEndpoints(final String endpoint_username,
 			final Collection<Directory> eps, final boolean forceReactivate,
-			boolean waitToFinish) throws CommandException {
+			boolean waitToFinish, boolean reloadEndpoints)
+			throws CommandException {
 
 		if (eps.size() == 0) {
 			return;
@@ -233,7 +234,8 @@ public class GlobusOnlineSession {
 				@Override
 				public void run() {
 					try {
-						activateEndpoint(endpoint_username, ep, forceReactivate);
+						activateEndpoint(endpoint_username, ep,
+								forceReactivate, false);
 					} catch (CommandException e) {
 						e.printStackTrace();
 					}
@@ -249,6 +251,10 @@ public class GlobusOnlineSession {
 				executor.awaitTermination(10, TimeUnit.MINUTES);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+			}
+
+			if (reloadEndpoints) {
+				loadEndpoints(true);
 			}
 		}
 	}
@@ -303,8 +309,8 @@ public class GlobusOnlineSession {
 	 *             if the endpoint could not be activated
 	 */
 	public void activateEndpoint(final String endpoint_username,
-			final Directory d, final boolean forceReactivate)
-			throws CommandException {
+			final Directory d, final boolean forceReactivate,
+			boolean reloadEndpoints) throws CommandException {
 
 		Collection<Group> groups = d.getGroups();
 		final Set<String> avail_groups = getCredential().getAvailableFqans()
@@ -329,7 +335,7 @@ public class GlobusOnlineSession {
 		}
 
 		activateEndpoint(endpoint_username + "#" + d.getAlias(), intersection
-				.iterator().next().toString(), forceReactivate);
+				.iterator().next().toString(), forceReactivate, reloadEndpoints);
 
 	}
 
@@ -373,7 +379,7 @@ public class GlobusOnlineSession {
 	 *             if the endpoint can't be activated
 	 */
 	public void activateEndpoint(String ep, Cred cred) throws CommandException {
-		activateEndpoint(ep, cred, false);
+		activateEndpoint(ep, cred, false, true);
 	}
 
 	/**
@@ -387,11 +393,12 @@ public class GlobusOnlineSession {
 	 * @param forceReactivate
 	 *            whether to re-activate the endpoint even if it is already
 	 *            activated
+	 * @params reloadEndpoints whether to reload all endpoints when finished
 	 * @throws CommandException
 	 *             if the endpoint can't be activated for some reason
 	 */
-	public void activateEndpoint(String ep, Cred cred, boolean forceReactivate)
-			throws CommandException {
+	public void activateEndpoint(String ep, Cred cred, boolean forceReactivate,
+			boolean reloadEndpoints) throws CommandException {
 
 		synchronized (ep) {
 
@@ -417,15 +424,18 @@ public class GlobusOnlineSession {
 	 *            the group
 	 * @param forceReactivate
 	 *            whether to re-activate the endpoint even if it is already
+	 * @params reloadEndpoints whether to reload the state of all endpoints once
+	 *         finished
 	 * @throws CommandException
 	 *             if the endpoint can't be found or activated
 	 */
-	public void activateEndpoint(String ep, String fqan, boolean forceReactivate)
+	public void activateEndpoint(String ep, String fqan,
+			boolean forceReactivate, boolean reloadEndpoints)
 			throws CommandException {
 
 		Cred tmp = getCredential().getGroupCredential(fqan);
 		tmp.uploadMyProxy();
-		activateEndpoint(ep, tmp, forceReactivate);
+		activateEndpoint(ep, tmp, forceReactivate, reloadEndpoints);
 
 	}
 
@@ -759,7 +769,7 @@ public class GlobusOnlineSession {
 	}
 
 	private void loadEndpoints(final boolean force) {
-		new Thread() {
+		Thread t = new Thread() {
 			@Override
 			public void run() {
 				try {
@@ -768,7 +778,9 @@ public class GlobusOnlineSession {
 					myLogger.error("Can't update endpoints.", e);
 				}
 			}
-		}.run();
+		};
+		t.setDaemon(true);
+		t.start();
 	}
 
 	/**
