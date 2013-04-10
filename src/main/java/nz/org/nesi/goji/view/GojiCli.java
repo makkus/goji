@@ -70,6 +70,9 @@ public class GojiCli extends GridClient {
 	private final String info_address;
 	private final String command;
 
+	private final String go_username;
+	private final String endpoint_username;
+
 	public GojiCli(GojiMainParameters params, String[] args) throws Exception {
 		super(GridLoginParameters
 				.createFromCommandlineArgs(params, args, false));
@@ -100,12 +103,19 @@ public class GojiCli extends GridClient {
 		}
 
 		info_address = params.getInfoFile();
+		endpoint_username = params.getEndpointUsername();
+		go_username = params.getGoUsername();
 
-		informationManager = new GrinformationManagerDozer(
-				"/data/src/config/nesi-grid-info/nesi_info.groovy");
+		if (StringUtils.isBlank(go_username)) {
+			System.err.println("Please provide your GlobusOnline username.");
+			jc.usage();
+			System.exit(1);
+		}
 
-		session = new GlobusOnlineUserSession("markus", "nz", getCredential(),
-				informationManager);
+		informationManager = new GrinformationManagerDozer(info_address);
+
+		session = new GlobusOnlineUserSession(go_username, endpoint_username,
+				getCredential(), informationManager);
 
 		session.registerForEvents(this);
 
