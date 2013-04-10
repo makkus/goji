@@ -132,8 +132,10 @@
 				<version>2.4</version>
 				<configuration>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
-					<pushChanges>false</pushChanges>
+					<pushChanges>true</pushChanges>
+					<tagNameFormat>@{project.version}</tagNameFormat>
 					<localCheckout>true</localCheckout>
+					<releaseProfiles>deb,rpm</releaseProfiles>
 				</configuration>
 			</plugin>
 
