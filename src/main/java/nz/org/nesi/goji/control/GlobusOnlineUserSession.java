@@ -140,7 +140,6 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 
 		activateEndpoints(endpoint_username, getDirectories(), forceReactivate,
 				wait, reloadEndpoints);
-
 	}
 
 	public String getEndpointUsername() {
@@ -217,13 +216,6 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	 */
 	public void createAllEndpoints() throws CommandException {
 
-		// if
-		// (!endpoint_username.equals(getGlobusOnlineUsername(endpoint_username)))
-		// {
-		// throw new CommandException(
-		// "Can't create endpoints because endpoint-username is different.");
-		// }
-
 		Set<Endpoint> allEndpoints = getAllUserEndpoints(endpoint_username,
 				true);
 
@@ -265,6 +257,22 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 
 		Directory d = getDirectory(url);
 		return d.toUrl() + Directory.getRelativePath(d, url);
+	}
+
+	public Set<Endpoint> filterUnusableEndpoints(Collection<Endpoint> original) {
+
+		Set<Endpoint> result = Sets.newLinkedHashSet();
+
+		for (Endpoint ep : original) {
+			try {
+				getDirectory(ep.getFullName());
+				result.add(ep);
+			} catch (FileSystemException fse) {
+				myLogger.debug("Ignoring: " + ep.getFullName());
+			}
+		}
+
+		return result;
 	}
 
 	public Collection<Directory> getDirectories() {

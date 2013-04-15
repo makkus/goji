@@ -1,5 +1,8 @@
 <configuration>
 
+ <logger name="grisu" level="debug"/>
+ <logger name="grith" level="debug"/>
+
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>${user.home}/.globus/goji.log</file>
     <append>true</append>

@@ -833,7 +833,12 @@ public class GlobusOnlineSession {
 
 		Set<Endpoint> endpoints = getAllUserEndpoints(user, true);
 		for (Endpoint ep : endpoints) {
-			removeEndpoint(user + "#" + ep.getName());
+			try {
+				removeEndpoint(user + "#" + ep.getName());
+			} catch (CommandException e) {
+				myLogger.debug("Can't remove endpoint '" + ep.getFullName()
+						+ "': " + e.getLocalizedMessage());
+			}
 		}
 
 	}
