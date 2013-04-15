@@ -230,7 +230,7 @@ public class GojiCli extends GridClient {
 		Set<Endpoint> endpoints = getRequestedEndpoints(endpointParameters
 				.getEndpoints());
 
-		// endpoints = session.filterUnusableEndpoints(endpoints);
+		endpoints = session.filterUnusableEndpoints(endpoints);
 
 		List<List<String>> output = Lists.newArrayList();
 
