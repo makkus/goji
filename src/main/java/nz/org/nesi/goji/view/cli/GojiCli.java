@@ -260,14 +260,21 @@ public class GojiCli extends GridClient {
 
 	@Subscribe
 	public void handleEndpointEvent(EndpointEvent event) {
+		Endpoint ep = null;
+		try {
+			ep = session.getEndpoint(event.getEndpoint());
+		} catch (CommandException e) {
+			e.printStackTrace();
+			return;
+		}
 		if (event instanceof EndpointActivatingEvent) {
-			System.out.println("Activating endpoint: " + event.getEndpoint());
+			System.out.println("Activating endpoint: " + ep.getName());
 		} else if (event instanceof EndpointActivatedEvent) {
-			System.out.println("Endpoint activated: " + event.getEndpoint());
+			System.out.println("Endpoint activated: " + ep.getName());
 		} else if (event instanceof EndpointDeactivatingEvent) {
-			System.out.println("Deactivating endpoint: " + event.getEndpoint());
+			System.out.println("Deactivating endpoint: " + ep.getName());
 		} else if (event instanceof EndpointDeactivatedEvent) {
-			System.out.println("Endpoint deactivated: " + event.getEndpoint());
+			System.out.println("Endpoint deactivated: " + ep.getName());
 		}
 	}
 }
