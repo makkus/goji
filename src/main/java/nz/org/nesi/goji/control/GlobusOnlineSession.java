@@ -454,7 +454,7 @@ public class GlobusOnlineSession {
 	public void activateOrReactivateEndpoint(String ep, Cred cred)
 			throws CommandException {
 
-		EndpointActivatingEvent ev1 = new EndpointActivatingEvent(ep);
+		EndpointActivatingEvent ev1 = new EndpointActivatingEvent(ep, cred);
 		eventBus.post(ev1);
 
 		Activate a = newCommand(Activate.class);

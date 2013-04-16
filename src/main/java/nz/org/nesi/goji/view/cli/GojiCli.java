@@ -269,7 +269,10 @@ public class GojiCli extends GridClient {
 			return;
 		}
 		if (event instanceof EndpointActivatingEvent) {
-			System.out.println("Activating endpoint: " + ep.getName());
+			System.out.println("Activating endpoint: " + ep.getName()
+					+ " (using group: "
+					+ ((EndpointActivatingEvent) event).getCred().getFqan()
+					+ ")");
 		} else if (event instanceof EndpointActivatedEvent) {
 			System.out.println("Endpoint activated: " + ep.getName());
 		} else if (event instanceof EndpointDeactivatingEvent) {
