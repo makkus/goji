@@ -260,6 +260,7 @@ public class GojiCli extends GridClient {
 
 	@Subscribe
 	public void handleEndpointEvent(EndpointEvent event) {
+
 		Endpoint ep = null;
 		try {
 			ep = session.getEndpoint(event.getEndpoint());
