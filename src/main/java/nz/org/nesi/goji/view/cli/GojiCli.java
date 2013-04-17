@@ -23,9 +23,13 @@ import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.events.EndpointActivatedEvent;
 import nz.org.nesi.goji.model.events.EndpointActivatingEvent;
+import nz.org.nesi.goji.model.events.EndpointCreatedEvent;
+import nz.org.nesi.goji.model.events.EndpointCreatingEvent;
 import nz.org.nesi.goji.model.events.EndpointDeactivatedEvent;
 import nz.org.nesi.goji.model.events.EndpointDeactivatingEvent;
 import nz.org.nesi.goji.model.events.EndpointEvent;
+import nz.org.nesi.goji.model.events.EndpointRemovedEvent;
+import nz.org.nesi.goji.model.events.EndpointRemovingEvent;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,6 +49,7 @@ public class GojiCli extends GridClient {
 	public static final String ACTIVATE = "activate";
 	public static final String DEACTIVATE = "deactivate";
 	public static final String LIST = "list";
+	public static final String SYNC = "sync-endpoints";
 
 	public static void main(String[] args) throws Exception {
 
@@ -65,6 +70,7 @@ public class GojiCli extends GridClient {
 	private final GojiEndpointParameters endpointParameters;
 	private final GojiActivateParameters activateParameters;
 	private final GojiDeactivateParameters deactivateParameters;
+	private final GojiEndpointSyncParameters endpointSyncParameters;
 
 	private final GlobusOnlineUserSession session;
 	private final InformationManager informationManager;
@@ -89,6 +95,8 @@ public class GojiCli extends GridClient {
 		jc.addCommand(ACTIVATE, activateParameters);
 		deactivateParameters = new GojiDeactivateParameters();
 		jc.addCommand(DEACTIVATE, deactivateParameters);
+		endpointSyncParameters = new GojiEndpointSyncParameters();
+		jc.addCommand(SYNC, endpointSyncParameters);
 
 		jc.parse(args);
 
@@ -129,6 +137,8 @@ public class GojiCli extends GridClient {
 				deactivate();
 			} else if (LIST.equals(command)) {
 				list();
+			} else if (SYNC.equals(command)) {
+				syncEndpoints();
 			}
 		} catch (CommandException ce) {
 			ce.printStackTrace();
@@ -214,6 +224,14 @@ public class GojiCli extends GridClient {
 
 	}
 
+	private void syncEndpoints() throws CommandException {
+
+		session.removeAllEndpoints();
+		session.createAllEndpoints();
+
+		System.out.println("Endpoints synced with config.");
+	}
+
 	private void deactivate() throws CommandException {
 
 		Collection<String> endpoints = getRequestedEndpointNames(deactivateParameters
@@ -258,16 +276,20 @@ public class GojiCli extends GridClient {
 		System.out.println(OutputHelpers.getTable(output, true));
 	}
 
+	private Endpoint getEndpoint(String endpoint) {
+		try {
+			return session.getEndpoint(endpoint);
+		} catch (CommandException e) {
+			// e.printStackTrace();
+			return null;
+		}
+	}
+
 	@Subscribe
 	public void handleEndpointEvent(EndpointEvent event) {
 
-		Endpoint ep = null;
-		try {
-			ep = session.getEndpoint(event.getEndpoint());
-		} catch (CommandException e) {
-			e.printStackTrace();
-			return;
-		}
+		Endpoint ep = getEndpoint(event.getEndpoint());
+
 		if (event instanceof EndpointActivatingEvent) {
 			System.out.println("Activating endpoint: " + ep.getName()
 					+ " (using group: "
@@ -279,6 +301,14 @@ public class GojiCli extends GridClient {
 			System.out.println("Deactivating endpoint: " + ep.getName());
 		} else if (event instanceof EndpointDeactivatedEvent) {
 			System.out.println("Endpoint deactivated: " + ep.getName());
+		} else if (event instanceof EndpointCreatingEvent) {
+			System.out.println("Creating endpoint: " + event.getEndpoint());
+		} else if (event instanceof EndpointCreatedEvent) {
+			System.out.println("Endpoint created: " + event.getEndpoint());
+		} else if (event instanceof EndpointRemovingEvent) {
+			System.out.println("Removing endpoint: " + ep.getName());
+		} else if (event instanceof EndpointRemovedEvent) {
+			System.out.println("Endpoint removed: " + event.getEndpoint());
 		}
 	}
 }

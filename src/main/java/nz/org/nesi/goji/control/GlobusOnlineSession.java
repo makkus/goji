@@ -37,8 +37,12 @@ import nz.org.nesi.goji.model.commands.PARAM;
 import nz.org.nesi.goji.model.commands.TransferCommand;
 import nz.org.nesi.goji.model.events.EndpointActivatedEvent;
 import nz.org.nesi.goji.model.events.EndpointActivatingEvent;
+import nz.org.nesi.goji.model.events.EndpointCreatedEvent;
+import nz.org.nesi.goji.model.events.EndpointCreatingEvent;
 import nz.org.nesi.goji.model.events.EndpointDeactivatedEvent;
 import nz.org.nesi.goji.model.events.EndpointDeactivatingEvent;
+import nz.org.nesi.goji.model.events.EndpointRemovedEvent;
+import nz.org.nesi.goji.model.events.EndpointRemovingEvent;
 
 import org.apache.commons.lang.StringUtils;
 import org.globusonline.transfer.BaseTransferAPIClient;
@@ -586,6 +590,9 @@ public class GlobusOnlineSession {
 
 		myLogger.debug("Adding endpoint for: " + epName);
 
+		EndpointCreatingEvent ev = new EndpointCreatingEvent(epName);
+		eventBus.post(ev);
+
 		EndpointAdd ea = newCommand(EndpointAdd.class);
 		ea.setGridFtpServer(host);
 		ea.setIsPublic(true);
@@ -594,6 +601,9 @@ public class GlobusOnlineSession {
 		ea.setEndpointName(epName);
 
 		ea.execute();
+
+		EndpointCreatedEvent ev1 = new EndpointCreatedEvent(epName, ev);
+		eventBus.post(ev1);
 
 		invalidateEndpoints();
 	}
@@ -885,7 +895,8 @@ public class GlobusOnlineSession {
 		Set<Endpoint> endpoints = getAllUserEndpoints(user, true);
 		for (Endpoint ep : endpoints) {
 			try {
-				removeEndpoint(user + "#" + ep.getName());
+				String epname = ep.getName();
+				removeEndpoint(epname);
 			} catch (CommandException e) {
 				myLogger.debug("Can't remove endpoint '" + ep.getFullName()
 						+ "': " + e.getLocalizedMessage());
@@ -901,9 +912,16 @@ public class GlobusOnlineSession {
 	public void removeEndpoint(String endpointname) throws CommandException {
 
 		myLogger.debug("Removing endpoint: " + endpointname);
+
+		EndpointRemovingEvent ev = new EndpointRemovingEvent(endpointname);
+		eventBus.post(ev);
+
 		EndpointRemove er = newCommand(EndpointRemove.class);
 		er.setEndpoint(endpointname);
 		er.execute();
+
+		EndpointRemovedEvent ev1 = new EndpointRemovedEvent(endpointname, ev);
+		eventBus.post(ev1);
 
 		invalidateEndpoints();
 	}

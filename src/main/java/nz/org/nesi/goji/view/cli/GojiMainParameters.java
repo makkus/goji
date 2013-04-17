@@ -12,10 +12,10 @@ import com.beust.jcommander.Parameter;
 public class GojiMainParameters extends GridCliParameters {
 
 	@Parameter(names = { "-g", "--go-username" }, description = "globus online username")
-	private final String goUsername = null;
+	private String goUsername = null;
 
 	@Parameter(names = { "-e", "--endpoint-username" }, description = "endpoint globus online username")
-	private final String endpointUsername = "nz";
+	private String endpointUsername = "nz";
 
 	@Parameter(names = { "-i", "--info-file" }, description = "file describing grid resources")
 	private String infoFile = null;
