@@ -16,6 +16,8 @@
  */
 package nz.org.nesi.goji.model.commands;
 
+import java.util.Map;
+
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.model.TaskInfo;
@@ -26,7 +28,7 @@ public class Task extends AbstractCommand {
 
 	private TaskInfo taskResult;
 
-	public Task (BaseTransferAPIClient client) {
+	public Task(BaseTransferAPIClient client) {
 		super(client);
 	}
 
@@ -37,7 +39,7 @@ public class Task extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getInputParameters() {
-		return new PARAM[]{PARAM.TASK_ID};
+		return new PARAM[] { PARAM.TASK_ID };
 	}
 
 	@Override
@@ -47,12 +49,12 @@ public class Task extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getOptionalParameters() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
 	protected PARAM[] getOutputParamets() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
@@ -85,6 +87,11 @@ public class Task extends AbstractCommand {
 			setParameter(PARAM.TASK_ID, id);
 		} catch (CommandException e) {
 		}
+	}
+
+	@Override
+	public Map<String, String> getQueryParams() {
+		return null;
 	}
 
 }

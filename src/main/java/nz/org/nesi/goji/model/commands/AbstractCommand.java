@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -20,6 +19,9 @@ import org.globusonline.transfer.APIError;
 import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.perf4j.StopWatch;
+import org.perf4j.aop.Profiled;
+import org.perf4j.slf4j.Slf4JStopWatch;
 import org.python.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,10 +62,7 @@ public abstract class AbstractCommand {
 	// }
 
 	public enum Method {
-		GET,
-		POST,
-		DELETE,
-		PUT
+		GET, POST, DELETE, PUT
 	}
 
 	// enum Output {
@@ -100,7 +99,6 @@ public abstract class AbstractCommand {
 	static final Logger myLogger = LoggerFactory
 			.getLogger(AbstractCommand.class);
 
-
 	/**
 	 * Constructor that doesn't also executes the command.
 	 * 
@@ -121,45 +119,45 @@ public abstract class AbstractCommand {
 		myLogger.debug("Creating GO command: " + name);
 		this.client = client;
 
-
 		init(config);
 		execute();
 	}
 
 	public AbstractCommand(BaseTransferAPIClient client, PARAM configInput,
 			String configValue) throws CommandException {
-		this(client,
-				new ImmutableMap.Builder<PARAM, String>().put(configInput,
-						configValue).build());
+		this(client, new ImmutableMap.Builder<PARAM, String>().put(configInput,
+				configValue).build());
 	}
 
-	public AbstractCommand(BaseTransferAPIClient client,
-			PARAM inputKey1,
+	public AbstractCommand(BaseTransferAPIClient client, PARAM inputKey1,
 			String input1, PARAM inputKey2, String input2)
-					throws CommandException {
-		this(client,
-				new ImmutableMap.Builder<PARAM, String>().put(inputKey1,
-						input1).put(inputKey2, input2).build());
+			throws CommandException {
+		this(client, new ImmutableMap.Builder<PARAM, String>()
+				.put(inputKey1, input1).put(inputKey2, input2).build());
 	}
-	
+
 	private BaseTransferAPIClient getClient() {
-//		BaseTransferAPIClient temp;
-//		try {
-//			temp = new JSONTransferAPIClient("markus",
-//					"/home/markus/.globus/certificates/gd_bundle.crt",
-//					"/home/markus/.grid/grid.proxy", "/home/markus/.grid/grid.proxy",
-//					Goji.DEFAULT_BASE_URL);
-//			return temp;
-//		} catch (KeyManagementException e) {
-//			e.printStackTrace();
-//		} catch (NoSuchAlgorithmException e) {
-//			e.printStackTrace();
-//		}
-//		throw new RuntimeException("Can't create client.");
+		// BaseTransferAPIClient temp;
+		// try {
+		// temp = new JSONTransferAPIClient("markus",
+		// "/home/markus/.globus/certificates/gd_bundle.crt",
+		// "/home/markus/.grid/grid.proxy", "/home/markus/.grid/grid.proxy",
+		// Goji.DEFAULT_BASE_URL);
+		// return temp;
+		// } catch (KeyManagementException e) {
+		// e.printStackTrace();
+		// } catch (NoSuchAlgorithmException e) {
+		// e.printStackTrace();
+		// }
+		// throw new RuntimeException("Can't create client.");
 		return this.client;
 	}
 
+	@Profiled
 	public void execute() throws CommandException {
+
+		StopWatch stopWatch = new Slf4JStopWatch(myLogger);
+		stopWatch.start();
 
 		PARAM[] i = getInputParameters();
 		Arrays.sort(i);
@@ -179,7 +177,7 @@ public abstract class AbstractCommand {
 			throw new CommandException("Could not initialize command: "
 					+ e.getLocalizedMessage(), e);
 		}
-		myLogger.debug("Executing GO command: " + name + " using path: "
+		myLogger.info("Executing GO command: " + name + " using path: "
 				+ getPath());
 		HttpsURLConnection c = null;
 		try {
@@ -187,8 +185,13 @@ public abstract class AbstractCommand {
 			String path = this.getPath();
 			String json = getJsonData();
 
-			c = getClient().request(m, path, json, null);
-			myLogger.debug("Executed GO command: " + name);
+			Map<String, String> queryParams = getQueryParams();
+
+			c = getClient().request(m, path, json, queryParams);
+			stopWatch.lap("GojiCommand." + this.getClass().getSimpleName()
+					+ ".request", "Got response for GO command: " + name
+					+ ". Setting result...");
+
 			setResult(c);
 			failed = false;
 		} catch (APIError apie) {
@@ -204,15 +207,16 @@ public abstract class AbstractCommand {
 			exception = e;
 			myLogger.debug(
 					"Can't execute GO command " + name + ": "
-							+ e.getLocalizedMessage(),
-							e);
+							+ e.getLocalizedMessage(), e);
 			throw new CommandException("Could not execute command: "
 					+ e.getLocalizedMessage(), e);
 
 		} finally {
-			if ( c != null) {
+			if (c != null) {
 				c.disconnect();
 			}
+			stopWatch.stop("GojiCommand." + this.getClass().getSimpleName()
+					+ ".finished", "Execution finished: " + getPath());
 		}
 
 	}
@@ -224,21 +228,15 @@ public abstract class AbstractCommand {
 	 *            the parameter to extract
 	 * @return the value
 	 */
-	protected String extractFromResults(String parameter)
-	{
+	protected String extractFromResults(String parameter) {
 		String value = null;
-		if (result != null)
-		{
-			try
-			{
+		if (result != null) {
+			try {
 				JSONObject jobj = result.getJSONObject(0);
-				if (jobj.get(parameter) != null)
-				{
+				if (jobj.get(parameter) != null) {
 					value = jobj.get(parameter).toString();
 				}
-			}
-			catch(Exception e)
-			{
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -253,28 +251,22 @@ public abstract class AbstractCommand {
 	 *            the parameter to extract
 	 * @return the value
 	 */
-	protected String extractFromResults(String arrayName, String parameter)
-	{
+	protected String extractFromResults(String arrayName, String parameter) {
 		String value = null;
-		if (result != null)
-		{
-			try
-			{
+		if (result != null) {
+			try {
 				JSONObject jsonO = result.getJSONObject(0);
 				if (jsonO != null) {
 					JSONArray dataArr = jsonO.getJSONArray(arrayName);
-					if ( dataArr != null ) {
+					if (dataArr != null) {
 
 						JSONObject jobj = dataArr.getJSONObject(0);
-						if (jobj.get(parameter) != null)
-						{
+						if (jobj.get(parameter) != null) {
 							value = jobj.get(parameter).toString();
 						}
 					}
 				}
-			}
-			catch(Exception e)
-			{
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -332,6 +324,7 @@ public abstract class AbstractCommand {
 
 	/**
 	 * The optional input parameters for this command.
+	 * 
 	 * @return optional input parameters
 	 */
 	protected abstract PARAM[] getOptionalParameters();
@@ -370,6 +363,13 @@ public abstract class AbstractCommand {
 	 * @return the path
 	 */
 	abstract public String getPath();
+
+	/**
+	 * Returns the query parameters for this command.
+	 * 
+	 * @return the parameters
+	 */
+	abstract public Map<String, String> getQueryParams();
 
 	public int getResponseCode() {
 		return responseCode;
@@ -433,7 +433,7 @@ public abstract class AbstractCommand {
 	 */
 	protected abstract void initialize() throws InitException;
 
-	/**
+/**
 	 * Process the results.
 	 * 
 	 * Results are stored in the {@link #result} variable. Parse the results in this methods and populate all {@link PARAM} that are specified in the {@link #getOutputParamets()} result
@@ -450,7 +450,8 @@ public abstract class AbstractCommand {
 	 * Might be not necessary though. Should be, if possible, calculated in the
 	 * {@link #initialize()} method.
 	 * 
-	 * @param the json data
+	 * @param the
+	 *            json data
 	 */
 	protected void putJsonData(String jsonData) {
 		this.jsonData = jsonData;
@@ -477,7 +478,6 @@ public abstract class AbstractCommand {
 		this.output.put(key, value);
 	}
 
-
 	/**
 	 * Sets or changes a single input parameter.
 	 * 
@@ -488,7 +488,7 @@ public abstract class AbstractCommand {
 	 * @throws CommandException
 	 */
 	public void setParameter(PARAM p, String value) throws CommandException {
-		if ( config == null ) {
+		if (config == null) {
 			init(null);
 		}
 
@@ -499,8 +499,7 @@ public abstract class AbstractCommand {
 
 		if ((Arrays.binarySearch(i, p) < 0) && (Arrays.binarySearch(o, p) < 0)) {
 			throw new CommandException("Parameter " + p.toString()
-					+ " not a valid input parameter for " + name
-					+ " command.");
+					+ " not a valid input parameter for " + name + " command.");
 		}
 		config.put(p, value);
 	}
@@ -535,7 +534,6 @@ public abstract class AbstractCommand {
 			}
 			strbuf.append("]");
 			in.close();
-
 
 			result = new JSONArray(strbuf.toString());
 			processResult();

@@ -16,6 +16,8 @@
  */
 package nz.org.nesi.goji.model.commands;
 
+import java.util.Map;
+
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
@@ -36,6 +38,7 @@ public class EndpointRemove extends AbstractCommand {
 	protected PARAM[] getInputParameters() {
 		return new PARAM[] { PARAM.ENDPOINT_NAME };
 	}
+
 	@Override
 	public String getJsonData() {
 		// not necessary
@@ -49,12 +52,13 @@ public class EndpointRemove extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getOptionalParameters() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
 	protected PARAM[] getOutputParamets() {
-		return new PARAM[]{PARAM.MESSAGE, PARAM.CODE, PARAM.RESOURCE, PARAM.REQ_ID};
+		return new PARAM[] { PARAM.MESSAGE, PARAM.CODE, PARAM.RESOURCE,
+				PARAM.REQ_ID };
 	}
 
 	@Override
@@ -98,5 +102,9 @@ public class EndpointRemove extends AbstractCommand {
 		return strbuf.toString();
 	}
 
+	@Override
+	public Map<String, String> getQueryParams() {
+		return null;
+	}
 
 }

@@ -19,12 +19,8 @@ package nz.org.nesi.goji.model.commands;
 import grisu.jcommons.model.info.GFile;
 import grisu.jcommons.utils.EndpointHelpers;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Map;
 import java.util.SortedSet;
-
-import javax.management.RuntimeErrorException;
 
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
@@ -34,6 +30,7 @@ import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 
 public class LsCommand extends AbstractCommand {
@@ -60,7 +57,7 @@ public class LsCommand extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getInputParameters() {
-		return new PARAM[]{PARAM.ENDPOINT_NAME, PARAM.PATH};
+		return new PARAM[] { PARAM.ENDPOINT_NAME, PARAM.PATH };
 	}
 
 	@Override
@@ -70,7 +67,7 @@ public class LsCommand extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getOptionalParameters() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
@@ -80,14 +77,9 @@ public class LsCommand extends AbstractCommand {
 
 	@Override
 	public String getPath() {
-		try {
-			return "/endpoint/"
-					+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
-					+ "/ls?path="
-					+ URLEncoder.encode(getConfig(PARAM.PATH), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
+		return "/endpoint/"
+				+ EndpointHelpers.encode(getConfig(PARAM.ENDPOINT_NAME))
+				+ "/ls";
 	}
 
 	@Override
@@ -138,4 +130,8 @@ public class LsCommand extends AbstractCommand {
 		}
 	}
 
+	@Override
+	public Map<String, String> getQueryParams() {
+		return ImmutableMap.of("path", getConfig(PARAM.PATH));
+	}
 }

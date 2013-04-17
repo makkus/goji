@@ -1,7 +1,8 @@
 <configuration>
 
- <logger name="grisu" level="debug"/>
- <logger name="grith" level="debug"/>
+ <logger name="grisu" level="info"/>
+ <logger name="grith" level="info"/>
+ <logger name="nz.org.nesi" level="info"/>
 
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>${user.home}/.globus/goji.log</file>
@@ -9,7 +10,7 @@
     <!-- encoders are assigned the type
          ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
     <encoder>
-      <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+      <pattern>%-30(%d{HH:mm:ss.SSS} [%level] [%thread]) [%logger{0}] - %msg%n</pattern>
     </encoder>
   </appender>
 

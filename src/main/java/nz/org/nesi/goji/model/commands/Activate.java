@@ -19,6 +19,9 @@ package nz.org.nesi.goji.model.commands;
 
 import grisu.jcommons.utils.EndpointHelpers;
 import grith.jgrith.cred.Cred;
+
+import java.util.Map;
+
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 import nz.org.nesi.goji.exceptions.RequestException;
@@ -275,6 +278,11 @@ public class Activate extends AbstractCommand {
 					"Can't set lifetime in Activate command: "
 							+ e.getLocalizedMessage(), e);
 		}
+	}
+
+	@Override
+	public Map<String, String> getQueryParams() {
+		return null;
 	}
 
 }

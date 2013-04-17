@@ -17,6 +17,9 @@
 package nz.org.nesi.goji.model.commands;
 
 import grisu.jcommons.utils.EndpointHelpers;
+
+import java.util.Map;
+
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
@@ -101,6 +104,11 @@ public class Deactivate extends AbstractCommand {
 		strbuf.append(getOutput(PARAM.MESSAGE));
 		strbuf.append("\n");
 		return strbuf.toString();
+	}
+
+	@Override
+	public Map<String, String> getQueryParams() {
+		return null;
 	}
 
 }

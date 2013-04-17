@@ -1,5 +1,7 @@
 package nz.org.nesi.goji.model.commands;
 
+import java.util.Map;
+
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
@@ -18,7 +20,7 @@ public class SubmissionId extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getInputParameters() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
@@ -28,7 +30,7 @@ public class SubmissionId extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getOptionalParameters() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
@@ -50,6 +52,11 @@ public class SubmissionId extends AbstractCommand {
 	protected void processResult() {
 		String transferID = extractFromResults("value");
 		putOutput(PARAM.SUBMISSION_ID, transferID);
+	}
+
+	@Override
+	public Map<String, String> getQueryParams() {
+		return null;
 	}
 
 }

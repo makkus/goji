@@ -367,8 +367,8 @@ public class UserEnvironment {
 	// return null;
 	// }
 
-	public Map<String, Endpoint> getAllEndpoints() {
-		return getAllEndpoints(false);
+	public Map<String, Endpoint> getAllEndpoints(String endpoint_username) {
+		return getAllEndpoints(endpoint_username, false);
 	}
 
 	/**
@@ -379,10 +379,12 @@ public class UserEnvironment {
 	 *            whether to force refresh the list of endpoints
 	 * @return all endpoints
 	 */
-	public Map<String, Endpoint> getAllEndpoints(boolean force_refresh) {
+	public Map<String, Endpoint> getAllEndpoints(String endpoint_username,
+			boolean force_refresh) {
 
 		if (force_refresh || (endpointList == null)) {
 			endpointList = new EndpointList(client);
+			endpointList.setUsernameFilter(endpoint_username);
 		}
 
 		return endpointList.getEndpoints();
@@ -451,7 +453,7 @@ public class UserEnvironment {
 
 	private Endpoint getEndpoint(String endpointName) {
 
-		return getAllEndpoints(false).get(endpointName);
+		return getAllEndpoints(endpoint_username, false).get(endpointName);
 
 	}
 
@@ -484,7 +486,8 @@ public class UserEnvironment {
 	public Map<String, Endpoint> getEndpoints(boolean force_refresh) {
 
 		Map<String, Endpoint> result = Maps.newTreeMap();
-		Map<String, Endpoint> allendpoints = getAllEndpoints(force_refresh);
+		Map<String, Endpoint> allendpoints = getAllEndpoints(endpoint_username,
+				force_refresh);
 		for (String ep : allendpoints.keySet()) {
 			if (allendpoints.get(ep).getUsername().equals(go_username)) {
 				result.put(ep, allendpoints.get(ep));

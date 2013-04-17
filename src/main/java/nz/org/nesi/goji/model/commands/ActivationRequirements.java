@@ -17,6 +17,9 @@
 package nz.org.nesi.goji.model.commands;
 
 import grisu.jcommons.utils.EndpointHelpers;
+
+import java.util.Map;
+
 import nz.org.nesi.goji.exceptions.CommandException;
 import nz.org.nesi.goji.exceptions.InitException;
 
@@ -46,12 +49,12 @@ public class ActivationRequirements extends AbstractCommand {
 
 	@Override
 	protected PARAM[] getOptionalParameters() {
-		return new PARAM[]{};
+		return new PARAM[] {};
 	}
 
 	@Override
 	protected PARAM[] getOutputParamets() {
-		return new PARAM[]{PARAM.MYPROXY_HOST};
+		return new PARAM[] { PARAM.MYPROXY_HOST };
 	}
 
 	@Override
@@ -85,5 +88,10 @@ public class ActivationRequirements extends AbstractCommand {
 		}
 	}
 
+	@Override
+	public Map<String, String> getQueryParams() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

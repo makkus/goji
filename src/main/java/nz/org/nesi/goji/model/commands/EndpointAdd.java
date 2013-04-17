@@ -28,17 +28,14 @@ import org.json.JSONObject;
 
 import com.google.common.collect.ImmutableMap;
 
-
 public class EndpointAdd extends AbstractCommand {
 
 	public EndpointAdd(BaseTransferAPIClient client) {
 		super(client);
 	}
 
-
-	public EndpointAdd(BaseTransferAPIClient client,
-			Map<PARAM, String> config)
-					throws CommandException {
+	public EndpointAdd(BaseTransferAPIClient client, Map<PARAM, String> config)
+			throws CommandException {
 
 		super(client, config);
 
@@ -46,22 +43,20 @@ public class EndpointAdd extends AbstractCommand {
 
 	public EndpointAdd(BaseTransferAPIClient client, String gridFTPServer,
 			String myProxyServer, String serverDN, boolean isGlobusConnect,
-			boolean isPublic, String endpointName)
-					throws CommandException {
+			boolean isPublic, String endpointName) throws CommandException {
 		super(client, new ImmutableMap.Builder<PARAM, String>()
 				.put(PARAM.GRIDFTP_SERVER, gridFTPServer)
 				.put(PARAM.MYPROXY_HOST, myProxyServer)
 				.put(PARAM.SERVER_DN, (serverDN == null) ? NO_VALUE : serverDN)
 				.put(PARAM.IS_GLOBUS_CONNECT,
 						new Boolean(isGlobusConnect).toString())
-						.put(PARAM.IS_PUBLIC, new Boolean(isPublic).toString())
-						.put(PARAM.ENDPOINT_NAME, endpointName).build());
+				.put(PARAM.IS_PUBLIC, new Boolean(isPublic).toString())
+				.put(PARAM.ENDPOINT_NAME, endpointName).build());
 	}
 
 	@Override
 	protected PARAM[] getInputParameters() {
-		return new PARAM[] { PARAM.GRIDFTP_SERVER,
-				PARAM.ENDPOINT_NAME };
+		return new PARAM[] { PARAM.GRIDFTP_SERVER, PARAM.ENDPOINT_NAME };
 	}
 
 	@Override
@@ -186,7 +181,6 @@ public class EndpointAdd extends AbstractCommand {
 		}
 	}
 
-
 	public void setGridFtpServer(String server) {
 		try {
 			setParameter(PARAM.GRIDFTP_SERVER, server);
@@ -235,5 +229,9 @@ public class EndpointAdd extends AbstractCommand {
 		return strbuf.toString();
 	}
 
+	@Override
+	public Map<String, String> getQueryParams() {
+		return null;
+	}
 
 }

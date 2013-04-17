@@ -46,7 +46,7 @@ public class TransferCommand extends AbstractCommand {
 
 	public TransferCommand(BaseTransferAPIClient client,
 			List<String> sourcePaths, List<String> targetPaths)
-					throws CommandException {
+			throws CommandException {
 		super(client, new ImmutableMap.Builder<PARAM, String>()
 				.put(PARAM.SOURCE_PATH, StringUtils.join(sourcePaths, ";"))
 				.put(PARAM.TARGET_PATH, StringUtils.join(targetPaths, ";"))
@@ -98,26 +98,26 @@ public class TransferCommand extends AbstractCommand {
 		String currentSource = getConfig(PARAM.SOURCE_PATH);
 		String currentTarget = getConfig(PARAM.TARGET_PATH);
 
-		if ( StringUtils.isBlank(currentSource)) {
+		if (StringUtils.isBlank(currentSource)) {
 			try {
 				setParameter(PARAM.SOURCE_PATH, source);
 			} catch (CommandException e) {
 			}
 		} else {
 			try {
-				setParameter(PARAM.SOURCE_PATH, currentSource+";"+source);
+				setParameter(PARAM.SOURCE_PATH, currentSource + ";" + source);
 			} catch (CommandException e) {
 			}
 		}
 
-		if ( StringUtils.isBlank(currentTarget)) {
+		if (StringUtils.isBlank(currentTarget)) {
 			try {
 				setParameter(PARAM.TARGET_PATH, target);
 			} catch (CommandException e) {
 			}
 		} else {
 			try {
-				setParameter(PARAM.TARGET_PATH, currentTarget+";"+target);
+				setParameter(PARAM.TARGET_PATH, currentTarget + ";" + target);
 			} catch (CommandException e) {
 			}
 		}
@@ -190,10 +190,10 @@ public class TransferCommand extends AbstractCommand {
 	@Override
 	protected void initialize() throws InitException {
 
-		String[] sourcePaths = StringUtils.split(
-				getConfig(PARAM.SOURCE_PATH), ";");
-		String[] targetPaths = StringUtils.split(
-				getConfig(PARAM.TARGET_PATH), ";");
+		String[] sourcePaths = StringUtils.split(getConfig(PARAM.SOURCE_PATH),
+				";");
+		String[] targetPaths = StringUtils.split(getConfig(PARAM.TARGET_PATH),
+				";");
 
 		if (sourcePaths.length != targetPaths.length) {
 			throw new InitException(
@@ -252,5 +252,9 @@ public class TransferCommand extends AbstractCommand {
 
 	}
 
+	@Override
+	public Map<String, String> getQueryParams() {
+		return null;
+	}
 
 }

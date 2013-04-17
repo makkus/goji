@@ -19,7 +19,6 @@ import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.Transfer;
 
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -193,17 +192,6 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 				});
 
 		deactivateEndpoints(temp, waitToFinish);
-
-	}
-
-	@Override
-	public Endpoint getEndpoint(String endpoint) throws CommandException {
-
-		if (StringUtils.isBlank(EndpointHelpers.extractUsername(endpoint))) {
-			return super.getEndpoint(endpoint_username + "#" + endpoint);
-		} else {
-			return super.getEndpoint(endpoint);
-		}
 
 	}
 

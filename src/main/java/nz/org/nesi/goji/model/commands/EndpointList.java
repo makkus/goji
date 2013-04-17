@@ -26,17 +26,30 @@ import org.globusonline.transfer.BaseTransferAPIClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.google.common.collect.Maps;
+
 public class EndpointList extends AbstractCommand {
 
 	private Map<String, Endpoint> endpoints;
 
+	private final Map<String, String> filters = Maps.newHashMap();
+
 	public EndpointList(BaseTransferAPIClient client) {
 		super(client);
 		try {
+			filters.put("limit", "1000");
 			init(null);
 		} catch (CommandException e) {
 			// should be fine
 		}
+	}
+
+	public void setUsernameFilter(String username) {
+		filters.put("filter", "username:" + username);
+	}
+
+	public void setLimit(Integer limit) {
+		filters.put("limit", limit.toString());
 	}
 
 	public Map<String, Endpoint> getEndpoints() {
@@ -71,7 +84,7 @@ public class EndpointList extends AbstractCommand {
 
 	@Override
 	public String getPath() {
-		return "/endpoint_list?limit=1000";
+		return "/endpoint_list";
 	}
 
 	@Override
@@ -98,6 +111,11 @@ public class EndpointList extends AbstractCommand {
 			}
 		}
 
+	}
+
+	@Override
+	public Map<String, String> getQueryParams() {
+		return filters;
 	}
 
 }

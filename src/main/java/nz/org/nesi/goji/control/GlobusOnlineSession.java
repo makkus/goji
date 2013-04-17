@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Predicate;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Collections2;
 import com.google.common.eventbus.EventBus;
 
@@ -56,10 +60,25 @@ public class GlobusOnlineSession {
 			.getLogger(GlobusOnlineSession.class);
 
 	private final BaseTransferAPIClient client;
+
 	private final String go_username;
 	private final String go_url;
 
 	private Set<Endpoint> endpoints;
+
+	private final LoadingCache<String, Set<Endpoint>> userEndpoints = CacheBuilder
+			.newBuilder().maximumSize(1000)
+			.build(new CacheLoader<String, Set<Endpoint>>() {
+				@Override
+				public Set<Endpoint> load(String user) throws CommandException {
+
+					EndpointList el = newCommand(EndpointList.class);
+					el.setUsernameFilter(user);
+					el.execute();
+					return Sets.newTreeSet(el.getEndpoints().values());
+
+				}
+			});
 
 	private final EventBus eventBus = new EventBus();
 
@@ -351,6 +370,13 @@ public class GlobusOnlineSession {
 	public void deactivateEndpoint(final String endpoint)
 			throws CommandException {
 
+		Endpoint ep = getEndpoint(endpoint);
+		if (ep == null || !ep.isActivated()) {
+			myLogger.debug("Endpoint does not need to be deactivated: "
+					+ endpoint);
+			return;
+		}
+
 		EndpointDeactivatingEvent ev1 = new EndpointDeactivatingEvent(endpoint);
 		eventBus.post(ev1);
 
@@ -604,6 +630,7 @@ public class GlobusOnlineSession {
 	 */
 	public synchronized Set<Endpoint> getAllEndpoints(boolean forceRefresh)
 			throws CommandException {
+
 		if ((endpoints == null) || forceRefresh) {
 			EndpointList el = newCommand(EndpointList.class);
 			el.execute();
@@ -642,15 +669,11 @@ public class GlobusOnlineSession {
 	public Set<Endpoint> getAllUserEndpoints(String user, boolean forceRefresh)
 			throws CommandException {
 
-		Set<Endpoint> result = Sets.newTreeSet();
-
-		for (Endpoint e : getAllEndpoints(forceRefresh)) {
-
-			if (user.equals(e.getUsername())) {
-				result.add(e);
-			}
+		try {
+			return userEndpoints.get(user);
+		} catch (ExecutionException e) {
+			throw ((CommandException) e.getCause());
 		}
-		return result;
 	}
 
 	/**
@@ -676,9 +699,28 @@ public class GlobusOnlineSession {
 		String username = EndpointHelpers.extractUsername(name);
 		String epName = EndpointHelpers.extractEndpointName(name);
 
-		for (Endpoint ep : getAllEndpoints(refresh)) {
-			if (ep.getUsername().equals(username)
-					&& ep.getName().equals(epName)) {
+		if (StringUtils.isBlank(username)) {
+			username = go_username;
+		}
+
+		return getEndpoint(username, epName, false);
+	}
+
+	public Endpoint getEndpoint(String endpoint_username, String endpoint_name,
+			boolean refresh) throws CommandException {
+
+		Set<Endpoint> eps = null;
+		if (refresh) {
+			invalidateUserEndpoints(endpoint_username);
+		}
+		try {
+			eps = userEndpoints.get(endpoint_username);
+		} catch (ExecutionException e) {
+			throw (CommandException) e.getCause();
+		}
+
+		for (Endpoint ep : eps) {
+			if (ep.getName().equals(endpoint_name)) {
 				return ep;
 			}
 		}
@@ -720,6 +762,10 @@ public class GlobusOnlineSession {
 
 	}
 
+	protected void invalidateUserEndpoints(String user) {
+		userEndpoints.invalidate(user);
+	}
+
 	protected void invalidateEndpoints() {
 		endpoints = null;
 	}
@@ -735,13 +781,18 @@ public class GlobusOnlineSession {
 	 */
 	public boolean isActivated(String ep) throws CommandException {
 
-		for (Endpoint e : getAllEndpoints(false)) {
+		Endpoint endpoint = getEndpoint(ep);
 
-			if (e.equals(ep)) {
-				return e.isActivated();
-			}
-		}
-		throw new CommandException("No endpoint with name " + ep + " found.");
+		return endpoint.isActivated();
+	}
+
+	public boolean isActivated(String ep_user, String endpoint, boolean refresh)
+			throws CommandException {
+
+		Endpoint ep = getEndpoint(ep_user, endpoint, refresh);
+
+		return ep.isActivated();
+
 	}
 
 	/**
