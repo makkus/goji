@@ -24,6 +24,7 @@ import java.util.TimeZone;
 
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Endpoint implements Comparable {
@@ -44,7 +45,7 @@ public class Endpoint implements Comparable {
 
 	private String hosts, subjects, status;
 
-	private boolean username_matches, is_globus_connect;
+	private boolean username_matches, is_globus_connect, is_connected;
 
 	private Date expires;
 
@@ -88,6 +89,8 @@ public class Endpoint implements Comparable {
 		String gc = jobj.getString("is_globus_connect");
 		if (gc != null) {
 			this.is_globus_connect = (gc.equals("true") ? true : false);
+		} else {
+			this.is_globus_connect = false;
 		}
 
 		try {
@@ -110,14 +113,38 @@ public class Endpoint implements Comparable {
 				} else {
 					this.subjects = jobj2.getString("subject");
 				}
-
-				this.port = jobj2.getInt("port");
-				this.scheme = jobj2.getString("scheme");
-				this.subject = jobj2.getString("subject");
-				this.hostname = jobj2.getString("hostname");
-				this.uri = jobj2.getString("uri");
+				try {
+					this.port = jobj2.getInt("port");
+				} catch (JSONException e) {
+				}
+				try {
+					this.scheme = jobj2.getString("scheme");
+				} catch (JSONException e) {
+				}
+				try {
+					this.subject = jobj2.getString("subject");
+				} catch (JSONException e) {
+				}
+				try {
+					this.hostname = jobj2.getString("hostname");
+				} catch (JSONException e) {
+				}
+				try {
+					this.uri = jobj2.getString("uri");
+				} catch (JSONException e) {
+				}
+				try {
+					Boolean ic = jobj2.getBoolean("is_connected");
+					if (ic != null) {
+						this.is_connected = ic;
+					} else {
+						this.is_connected = false;
+					}
+				} catch (JSONException e) {
+				}
 			}
 		} catch (Exception e) {
+
 		}
 
 		String myproxy_server = "n/a";
@@ -201,6 +228,14 @@ public class Endpoint implements Comparable {
 
 	public boolean isActivated() {
 		return Boolean.parseBoolean(activated);
+	}
+
+	public boolean isGlobusConnect() {
+		return is_globus_connect;
+	}
+
+	public boolean isConnected() {
+		return is_connected;
 	}
 
 	@Override

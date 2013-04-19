@@ -12,6 +12,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import nz.org.nesi.goji.GlobusOnlineConstants;
 import nz.org.nesi.goji.exceptions.CommandException;
@@ -19,6 +22,7 @@ import nz.org.nesi.goji.exceptions.FileSystemException;
 import nz.org.nesi.goji.model.Endpoint;
 import nz.org.nesi.goji.model.Transfer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,6 +150,21 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 		return endpoint_username;
 	}
 
+	public void activateEndpointName(final String ep, String fqan,
+			final boolean forceReactivate, final boolean reloadEndpoints)
+			throws CommandException {
+
+		String un = EndpointHelpers.extractUsername(ep);
+		if (StringUtils.isBlank(un)) {
+			un = endpoint_username;
+		}
+		String epName = EndpointHelpers.extractEndpointName(ep);
+
+		activateEndpoint(un + "#" + epName, fqan, forceReactivate,
+				reloadEndpoints);
+
+	}
+
 	public void activateEndpointNames(final Collection<String> eps,
 			final boolean forceReactivate, boolean waitToFinish,
 			boolean reloadEndpoints) throws CommandException {
@@ -211,15 +230,18 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 	 */
 	public void createAllEndpoints() throws CommandException {
 
-		Set<Endpoint> allEndpoints = getAllUserEndpoints(endpoint_username,
-				true);
+		Set<Endpoint> endpoints = getAllUserEndpoints(endpoint_username, true);
 
-		for (Directory d : getDirectories()) {
+		Collection<Directory> dirs = getDirectories();
+
+		ExecutorService executor = Executors.newFixedThreadPool(dirs.size());
+
+		for (final Directory d : dirs) {
 
 			String alias = d.getAlias();
 
 			boolean alreadyExists = false;
-			for (Endpoint ep : allEndpoints) {
+			for (Endpoint ep : endpoints) {
 				if (ep.getName().equals(alias)) {
 					alreadyExists = true;
 					break;
@@ -227,9 +249,34 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 			}
 
 			if (!alreadyExists) {
-				addEndpoint(d);
+				Thread t = new Thread() {
+					@Override
+					public void run() {
+						try {
+							addEndpoint(d);
+						} catch (CommandException e) {
+							myLogger.debug("Can't create endpoint '"
+									+ d.getAlias() + "': "
+									+ e.getLocalizedMessage());
+						}
+					}
+				};
+				t.setName("Create endpoint: " + d.getAlias());
+				executor.submit(t);
 			}
 		}
+
+		executor.shutdown();
+
+		try {
+			executor.awaitTermination(10, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+
+		invalidateEndpoints();
+		invalidateUserEndpoints(endpoint_username);
+
 	}
 
 	public String ensureGlobusUrl(String url) throws FileSystemException {
@@ -260,6 +307,12 @@ public class GlobusOnlineUserSession extends GlobusOnlineSession {
 
 		for (Endpoint ep : original) {
 			try {
+				//
+				// if (ep.isGlobusConnect()) {
+				// result.add(ep);
+				// continue;
+				// }
+
 				getDirectory(ep.getFullName());
 				result.add(ep);
 			} catch (FileSystemException fse) {

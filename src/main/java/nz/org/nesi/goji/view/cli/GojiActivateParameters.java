@@ -9,7 +9,7 @@ public class GojiActivateParameters {
 
 	@Parameter(description = "Endpoints to activate (default: '"
 			+ GojiCli.ALL_ENDPOINTS + "')")
-	private final List<String> endpoints = Lists.newArrayList();
+	private List<String> endpoints = Lists.newArrayList();
 
 	public List<String> getEndpoints() {
 		return endpoints;

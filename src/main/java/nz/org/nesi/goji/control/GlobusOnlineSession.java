@@ -666,6 +666,44 @@ public class GlobusOnlineSession {
 	}
 
 	/**
+	 * Returns all GlobusConnect endpoints of a user.
+	 * 
+	 * Doesn't refresh the endpoint list if already loaded.
+	 * 
+	 * @param user
+	 *            the username
+	 * @return the GC endpoints
+	 * @throws CommandException
+	 *             if the endpoints can't be retrieved
+	 */
+	public Collection<Endpoint> getAllUserGlobusConnectEndpoints(String user)
+			throws CommandException {
+		return getAllUserGlobusConnectEndpoints(user, false);
+	}
+
+	/**
+	 * Returns all GlobusConnect endpoints of a user. *
+	 * 
+	 * @param user
+	 *            the username
+	 * @param refresh
+	 *            whether to refresh the endpoint list
+	 * @return the GC endpoints
+	 * @throws CommandException
+	 *             if the endpoints can't be retrieved
+	 */
+	public Collection<Endpoint> getAllUserGlobusConnectEndpoints(String user,
+			boolean refresh) throws CommandException {
+		return Collections2.filter(getAllUserEndpoints(user, refresh),
+				new Predicate<Endpoint>() {
+
+					public boolean apply(Endpoint input) {
+						return input.isGlobusConnect();
+					}
+				});
+	}
+
+	/**
 	 * Gets all of the endpoints that are owned by the user.
 	 * 
 	 * @param forceRefresh
@@ -893,15 +931,43 @@ public class GlobusOnlineSession {
 	public void removeAllEndpoints(String user) throws CommandException {
 
 		Set<Endpoint> endpoints = getAllUserEndpoints(user, true);
-		for (Endpoint ep : endpoints) {
-			try {
-				String epname = ep.getName();
-				removeEndpoint(epname);
-			} catch (CommandException e) {
-				myLogger.debug("Can't remove endpoint '" + ep.getFullName()
-						+ "': " + e.getLocalizedMessage());
-			}
+
+		if (endpoints == null || endpoints.size() == 0) {
+			return;
 		}
+
+		ExecutorService executor = Executors.newFixedThreadPool(endpoints
+				.size());
+
+		for (final Endpoint ep : endpoints) {
+
+			Thread t = new Thread() {
+				@Override
+				public void run() {
+					try {
+						String epname = ep.getName();
+						removeEndpoint(epname);
+					} catch (CommandException e) {
+						myLogger.debug("Can't remove endpoint '"
+								+ ep.getFullName() + "': "
+								+ e.getLocalizedMessage());
+					}
+				}
+			};
+			t.setName("Delete endpoint: " + ep);
+			executor.submit(t);
+		}
+
+		executor.shutdown();
+
+		try {
+			executor.awaitTermination(10, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+
+		invalidateEndpoints();
+		invalidateUserEndpoints(user);
 
 	}
 

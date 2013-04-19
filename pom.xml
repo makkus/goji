@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>nz.org.nesi</groupId>
 	<artifactId>goji</artifactId>
@@ -55,8 +56,8 @@
 		<connection>scm:git:git://github.com/makkus/goji.git</connection>
 		<developerConnection>scm:git:git@github.com:makkus/goji.git</developerConnection>
 		<url>https://github.com/makkus/goji</url>
-	  <tag>HEAD</tag>
-  </scm>
+		<tag>HEAD</tag>
+	</scm>
 
 	<dependencies>
 		<dependency>
@@ -84,6 +85,7 @@
 			<artifactId>grid-jcommons</artifactId>
 			<version>2.7-SNAPSHOT</version>
 		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -253,8 +255,8 @@
 					</plugin>
 				</plugins>
 			</build>
-		</profile>		
-		
+		</profile>
+
 		<profile>
 			<id>deb</id>
 			<!-- <activation> -->
@@ -334,7 +336,7 @@
 										</replacement>
 									</replacements>
 								</configuration>
-							</execution>							
+							</execution>
 						</executions>
 					</plugin>
 					<plugin>
@@ -374,17 +376,17 @@
 											</mapper>
 										</data>
 
-<!-- 										<data> -->
-<!-- 											<src>${project.basedir}/src/deb/data/griclish.desktop</src> -->
-<!-- 											<type>file</type> -->
-<!-- 											<mapper> -->
-<!-- 												<type>perm</type> -->
-<!-- 												<prefix>/usr/share/applications/</prefix> -->
-<!-- 												<user>root</user> -->
-<!-- 												<group>root</group> -->
-<!-- 												<filemode>755</filemode> -->
-<!-- 											</mapper> -->
-<!-- 										</data> -->
+										<!-- <data> -->
+										<!-- <src>${project.basedir}/src/deb/data/griclish.desktop</src> -->
+										<!-- <type>file</type> -->
+										<!-- <mapper> -->
+										<!-- <type>perm</type> -->
+										<!-- <prefix>/usr/share/applications/</prefix> -->
+										<!-- <user>root</user> -->
+										<!-- <group>root</group> -->
+										<!-- <filemode>755</filemode> -->
+										<!-- </mapper> -->
+										<!-- </data> -->
 										<data>
 											<src>${project.basedir}/src/pkg/data/goji.png</src>
 											<type>file</type>
@@ -460,18 +462,18 @@
 									</sources>
 								</mapping>
 
-<!-- 								<mapping> -->
-<!-- 									<directory>/usr/share/applications/</directory> -->
-<!-- 									<documentation>false</documentation> -->
-<!-- 									<filemode>755</filemode> -->
-<!-- 									<username>root</username> -->
-<!-- 									<groupname>root</groupname> -->
-<!-- 									<sources> -->
-<!-- 										<source> -->
-<!-- 											<location>src/deb/data/goji.desktop</location> -->
-<!-- 										</source> -->
-<!-- 									</sources> -->
-<!-- 								</mapping> -->
+								<!-- <mapping> -->
+								<!-- <directory>/usr/share/applications/</directory> -->
+								<!-- <documentation>false</documentation> -->
+								<!-- <filemode>755</filemode> -->
+								<!-- <username>root</username> -->
+								<!-- <groupname>root</groupname> -->
+								<!-- <sources> -->
+								<!-- <source> -->
+								<!-- <location>src/deb/data/goji.desktop</location> -->
+								<!-- </source> -->
+								<!-- </sources> -->
+								<!-- </mapping> -->
 								<mapping>
 									<directory>/usr/local/lib/grisu/icons/</directory>
 									<documentation>false</documentation>
@@ -503,7 +505,7 @@
 
 
 		</profile>
-		
+
 	</profiles>
 
 </project>

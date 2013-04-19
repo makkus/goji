@@ -2,6 +2,8 @@ package nz.org.nesi.goji.view.cli;
 
 import grisu.jcommons.interfaces.GrinformationManagerDozer;
 import grisu.jcommons.interfaces.InformationManager;
+import grisu.jcommons.model.info.GFile;
+import grisu.jcommons.utils.EndpointHelpers;
 import grisu.jcommons.utils.EnvironmentVariableHelpers;
 import grisu.jcommons.utils.OutputHelpers;
 import grisu.model.info.dto.Directory;
@@ -16,6 +18,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
 
 import nz.org.nesi.goji.control.GlobusOnlineUserSession;
 import nz.org.nesi.goji.exceptions.CommandException;
@@ -32,6 +35,8 @@ import nz.org.nesi.goji.model.events.EndpointRemovedEvent;
 import nz.org.nesi.goji.model.events.EndpointRemovingEvent;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.globusonline.transfer.APIError;
 
 import com.beust.jcommander.JCommander;
 import com.google.common.base.Function;
@@ -48,8 +53,9 @@ public class GojiCli extends GridClient {
 	public static final String ALL_ENDPOINTS = "all";
 	public static final String ACTIVATE = "activate";
 	public static final String DEACTIVATE = "deactivate";
-	public static final String LIST = "list";
+	public static final String LIST_ENDPOINTS = "list-endpoints";
 	public static final String SYNC = "sync-endpoints";
+	public static final String LS = "ls";
 
 	public static void main(String[] args) throws Exception {
 
@@ -71,6 +77,7 @@ public class GojiCli extends GridClient {
 	private final GojiActivateParameters activateParameters;
 	private final GojiDeactivateParameters deactivateParameters;
 	private final GojiEndpointSyncParameters endpointSyncParameters;
+	private final GojiLsParameters lsParameters;
 
 	private final GlobusOnlineUserSession session;
 	private final InformationManager informationManager;
@@ -90,13 +97,15 @@ public class GojiCli extends GridClient {
 		JCommander jc = new JCommander(this.mainParameters);
 
 		endpointParameters = new GojiEndpointParameters();
-		jc.addCommand(LIST, endpointParameters);
+		jc.addCommand(LIST_ENDPOINTS, endpointParameters);
 		activateParameters = new GojiActivateParameters();
 		jc.addCommand(ACTIVATE, activateParameters);
 		deactivateParameters = new GojiDeactivateParameters();
 		jc.addCommand(DEACTIVATE, deactivateParameters);
 		endpointSyncParameters = new GojiEndpointSyncParameters();
 		jc.addCommand(SYNC, endpointSyncParameters);
+		lsParameters = new GojiLsParameters();
+		jc.addCommand(LS, lsParameters);
 
 		jc.parse(args);
 
@@ -130,18 +139,60 @@ public class GojiCli extends GridClient {
 
 		session.registerForEvents(this);
 
+		Thread t = new Thread() {
+			@Override
+			public void run() {
+				try {
+					session.getAllUserEndpoints(go_username, true);
+				} catch (CommandException e) {
+					myLogger.error("Could not list user endpoints for: "
+							+ go_username, e);
+				}
+			}
+		};
+		t.setName("Endpoint lookup: " + go_username);
+		t.setDaemon(true);
+		t.start();
+
+		if (!go_username.equals(endpoint_username)) {
+			Thread t2 = new Thread() {
+				@Override
+				public void run() {
+					try {
+						session.getAllUserEndpoints(endpoint_username, true);
+					} catch (CommandException e) {
+						myLogger.error("Could not list user endpoints for: "
+								+ endpoint_username, e);
+					}
+				}
+			};
+			t2.setName("Endpoint lookup: " + endpoint_username);
+			t2.setDaemon(true);
+			t2.start();
+		}
+
 		try {
 			if (ACTIVATE.equals(command)) {
 				activate(true);
 			} else if (DEACTIVATE.equals(command)) {
 				deactivate();
-			} else if (LIST.equals(command)) {
+			} else if (LIST_ENDPOINTS.equals(command)) {
 				list();
 			} else if (SYNC.equals(command)) {
 				syncEndpoints();
+			} else if (LS.equals(command)) {
+				ls();
 			}
 		} catch (CommandException ce) {
-			ce.printStackTrace();
+			Throwable e = ce.getCause();
+			if (e instanceof APIError) {
+				System.err.println("Could not execute '" + command + "': "
+						+ ((APIError) e).message);
+			} else {
+				System.err.println("Could not execute '" + command + "': "
+						+ ExceptionUtils.getRootCauseMessage(ce));
+			}
+			// ce.printStackTrace();
 		}
 
 	}
@@ -254,13 +305,35 @@ public class GojiCli extends GridClient {
 
 		List<String> temp = Lists.newLinkedList();
 		temp.add("Endpoint");
-		temp.add("Is active");
+		temp.add("Activated");
 		temp.add("Expires");
+		// temp.add("Connected");
+		temp.add("Is GlobusConnect");
 		output.add(temp);
 
 		for (Endpoint ep : endpoints) {
 			Boolean active = ep.isActivated();
 			Date timeLeft = ep.getExpires();
+			String name = ep.getName();
+			Boolean connected = ep.isConnected();
+			temp = Lists.newLinkedList();
+			temp.add(name);
+			temp.add(active.toString());
+			if (active) {
+				temp.add(format.format(timeLeft).toLowerCase());
+			} else {
+				temp.add("n/a");
+			}
+			// temp.add(connected.toString());
+			temp.add("no");
+			output.add(temp);
+		}
+
+		for (Endpoint ep : session
+				.getAllUserGlobusConnectEndpoints(go_username)) {
+			Boolean active = ep.isActivated();
+			Date timeLeft = ep.getExpires();
+			Boolean connected = ep.isConnected();
 			String name = ep.getName();
 			temp = Lists.newLinkedList();
 			temp.add(name);
@@ -270,10 +343,37 @@ public class GojiCli extends GridClient {
 			} else {
 				temp.add("n/a");
 			}
+			// temp.add(connected.toString());
+			temp.add("yes");
 			output.add(temp);
 		}
 
 		System.out.println(OutputHelpers.getTable(output, true));
+	}
+
+	private void ls() throws CommandException {
+
+		List<String> urls = lsParameters.getUrls();
+
+		for (String url : urls) {
+
+			String epName = EndpointHelpers.extractEndpointPart(url);
+			System.out.println("EP: " + epName);
+			String un = EndpointHelpers.extractUsername(epName);
+			if (StringUtils.isBlank(un)) {
+				epName = endpoint_username + "#" + epName;
+				System.out.println("EP: " + epName);
+			}
+
+			String path = EndpointHelpers.extractPathPart(url);
+
+			SortedSet<GFile> dir = session.listDirectory(epName, path);
+
+			for (GFile f : dir) {
+				System.out.println("\t" + f.getName());
+			}
+		}
+
 	}
 
 	private Endpoint getEndpoint(String endpoint) {
