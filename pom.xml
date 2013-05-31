@@ -65,25 +65,30 @@
 			<artifactId>guice</artifactId>
 			<version>3.0</version>
 		</dependency>
-		<dependency>
-			<groupId>grith</groupId>
-			<artifactId>grid-session</artifactId>
-			<version>0.3-SNAPSHOT</version>
-		</dependency>
+        <dependency>
+            <groupId>grith</groupId>
+            <artifactId>grid-session</artifactId>
+            <version>0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>grith</groupId>
+            <artifactId>jgrith</artifactId>
+            <version>1.0.1</version>
+        </dependency>
 		<dependency>
 			<groupId>org.globusonline</groupId>
 			<artifactId>transfer-api-client-java</artifactId>
-			<version>0.10.7</version>
+			<version>0.10.8</version>
 		</dependency>
 		<dependency>
-			<groupId>nz.nesi</groupId>
+			<groupId>nz.org.nesi</groupId>
 			<artifactId>grin</artifactId>
-			<version>0.2.2</version>
+			<version>0.4</version>
 		</dependency>
 		<dependency>
 			<groupId>grisu</groupId>
 			<artifactId>grid-jcommons</artifactId>
-			<version>2.7-SNAPSHOT</version>
+			<version>2.9</version>
 		</dependency>
 
 	</dependencies>
